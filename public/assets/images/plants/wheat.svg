@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100" height="120">
+  <path d="M50 20v80" stroke="#22c55e" stroke-width="4" stroke-linecap="round" />
+  <path d="M30 30c10-5 20 0 20 10" stroke="#f59e0b" stroke-width="3" fill="none" />
+  <path d="M70 40c-10-5-20 0-20 10" stroke="#f59e0b" stroke-width="3" fill="none" />
+  <path d="M30 50c10-5 20 0 20 10" stroke="#f59e0b" stroke-width="3" fill="none" />
+  <path d="M70 60c-10-5-20 0-20 10" stroke="#f59e0b" stroke-width="3" fill="none" />
+  <path d="M30 70c10-5 20 0 20 10" stroke="#f59e0b" stroke-width="3" fill="none" />
+  <ellipse cx="30" cy="30" rx="3" ry="7" transform="rotate(-30 30 30)" fill="#f59e0b" />
+  <ellipse cx="70" cy="40" rx="3" ry="7" transform="rotate(30 70 40)" fill="#f59e0b" />
+  <ellipse cx="30" cy="50" rx="3" ry="7" transform="rotate(-30 30 50)" fill="#f59e0b" />
+  <ellipse cx="70" cy="60" rx="3" ry="7" transform="rotate(30 70 60)" fill="#f59e0b" />
+  <ellipse cx="30" cy="70" rx="3" ry="7" transform="rotate(-30 30 70)" fill="#f59e0b" />
+</svg>

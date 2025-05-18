@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100" height="120">
+  <path d="M50 20c-20 0-35 15-35 35s15 35 35 35 35-15 35-35-15-35-35-35z" fill="#ef4444" />
+  <path d="M50 30c-15 0-25 10-25 25s10 25 25 25 25-10 25-25-10-25-25-25z" fill="#dc2626" />
+  <path d="M50 10c0-5 5-10 10-10s10 5 10 10c0 5-5 10-10 10" stroke="#22c55e" stroke-width="3" fill="none" />
+  <path d="M50 10c0-5-5-10-10-10S30 5 30 10c0 5 5 10 10 10" stroke="#22c55e" stroke-width="3" fill="none" />
+  <path d="M40 20v10" stroke="#22c55e" stroke-width="3" fill="none" />
+  <path d="M60 20v10" stroke="#22c55e" stroke-width="3" fill="none" />
+  <path d="M50 20v10" stroke="#22c55e" stroke-width="3" fill="none" />
+</svg>
