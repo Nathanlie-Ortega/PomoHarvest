@@ -1,15 +1,13 @@
+// src/components/layout/Header.js
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
+import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
   const location = useLocation();
-  
-  // Safely access auth context
-  const auth = useAuth();
-  const currentUser = auth ? auth.currentUser : null;
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -19,25 +17,23 @@ const Header = () => {
     return location.pathname === path;
   };
   
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Garden', path: '/garden' },
-    { name: 'Stats', path: '/stats' }
-  ];
-
-  const handleLogout = () => {
-    if (auth && auth.logout) {
-      auth.logout();
-    }
-  };
+  // Different navigation links based on authentication
+  const navLinks = currentUser 
+    ? [
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Garden', path: '/garden' },
+        { name: 'Stats', path: '/stats' }
+      ]
+    : [
+        { name: 'Home', path: '/' }
+      ];
   
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm">
+    <header className="header-footer-bg shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          {/* Logo - Navigate to dashboard if logged in, home otherwise */}
+          <Link to={currentUser ? "/dashboard" : "/"} className="flex items-center space-x-2">
             <img src="/assets/images/logo.svg" alt="PomoHarvest" className="h-8 w-8" />
             <span className="text-xl font-display font-bold text-primary-600 dark:text-primary-400">
               PomoHarvest
@@ -73,7 +69,7 @@ const Header = () => {
                   Settings
                 </Link>
                 <button
-                  onClick={handleLogout}
+                  onClick={logout}
                   className="btn-outline text-sm"
                 >
                   Log Out
@@ -142,7 +138,7 @@ const Header = () => {
                   </Link>
                   <button
                     onClick={() => {
-                      handleLogout();
+                      logout();
                       setIsMenuOpen(false);
                     }}
                     className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-300"

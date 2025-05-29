@@ -1,81 +1,102 @@
-import React, { useEffect, useState } from 'react';
-import { useTimer } from '../../hooks/useTimer';
-import TimerDisplay from './TimerDisplay';
-import TimerControls from './TimerControls';
-import PlantGrowth from './PlantGrowth';
-import { useSound } from '../../hooks/useSound';
+import React from 'react';
 
-const Timer = () => {
-  const { 
-    time,
-    isActive,
-    isPaused,
-    isBreak,
-    startTimer,
-    pauseTimer,
-    resumeTimer,
-    resetTimer,
-    completePomodoro,
-    skipBreak
-  } = useTimer();
-  
-  const { playSound } = useSound();
-  const [growthStage, setGrowthStage] = useState(0);
-  
-  // Calculate plant growth stage based on time remaining
-  useEffect(() => {
-    if (!isPaused && isActive && !isBreak) {
-      const initialTime = 25 * 60; // 25 minutes in seconds
-      const progress = 1 - (time / initialTime);
-      setGrowthStage(Math.floor(progress * 5)); // 5 growth stages
-    }
-  }, [time, isPaused, isActive, isBreak]);
-
+const TimerControls = ({ 
+  isActive, 
+  isPaused, 
+  isBreak,
+  breakEnabled,
+  onStart, 
+  onPause, 
+  onResume, 
+  onReset,
+  onSkipBreak,
+  onBreak
+}) => {
   return (
-    <div className="w-full max-w-md mx-auto p-6">
-      <div className="card p-6">
-        <h2 className="text-2xl font-display font-bold text-center mb-6">
-          {isBreak ? 'Break Time' : 'Focus Time'}
-        </h2>
-        
-        <div className="flex flex-col items-center space-y-8">
-          <TimerDisplay time={time} isBreak={isBreak} />
+    <div className="flex items-center justify-center space-x-4">
+      {!isActive && !isPaused ? (
+        <button 
+          onClick={onStart} 
+          className="btn-primary rounded-full p-3"
+          aria-label="Start timer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      ) : isPaused ? (
+        <>
+          <button 
+            onClick={onResume} 
+            className="btn-primary rounded-full p-3"
+            aria-label="Resume timer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <button 
+            onClick={onReset} 
+            className="btn-outline rounded-full p-3"
+            aria-label="Reset timer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            </svg>
+          </button>
+        </>
+      ) : (
+        <>
+          <button 
+            onClick={onPause} 
+            className="btn-primary rounded-full p-3"
+            aria-label="Pause timer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <button 
+            onClick={onReset} 
+            className="btn-outline rounded-full p-3"
+            aria-label="Reset timer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            </svg>
+          </button>
           
-          {!isBreak && (
-            <div className="w-full">
-              <PlantGrowth stage={growthStage} />
-            </div>
+          {!isBreak && breakEnabled && (
+            <button
+              onClick={onBreak}
+              className="btn bg-secondary-500 hover:bg-secondary-600 text-white rounded-full p-3"
+              aria-label="Take a break"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" />
+              </svg>
+            </button>
           )}
-          
-          <TimerControls 
-            isActive={isActive}
-            isPaused={isPaused}
-            isBreak={isBreak}
-            onStart={() => {
-              startTimer();
-              playSound('start');
-            }}
-            onPause={() => {
-              pauseTimer();
-              playSound('pause');
-            }}
-            onResume={() => {
-              resumeTimer();
-              playSound('start');
-            }}
-            onReset={() => {
-              resetTimer();
-              playSound('reset');
-            }}
-            onSkipBreak={() => {
-              skipBreak();
-              playSound('reset');
-            }}
-          />
-        </div>
-      </div>
+        </>
+      )}
+      
+      {isBreak && (
+        <button
+          onClick={onSkipBreak}
+          className="btn-secondary rounded-full p-3"
+          aria-label="Skip break"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };
 
-export default Timer;
+export default TimerControls;

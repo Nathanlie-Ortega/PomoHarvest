@@ -22,6 +22,24 @@ const PlantDetails = ({ plant, plantInfo, onClose }) => {
     
     return `${minutes} min`;
   };
+
+  // Determine plant status and reason
+  const plantStatus = plant.status || 'success';
+  let statusText = 'Successfully Grown';
+  let statusColor = 'text-green-500';
+  
+  if (plantStatus === 'failed') {
+    if (plant.wilted) {
+      statusText = 'Wilted (Too Many Pauses)';
+      statusColor = 'text-red-500';
+    } else if (plant.earlyBreak) {
+      statusText = 'Harvested Early';
+      statusColor = 'text-yellow-500';
+    } else {
+      statusText = 'Growth Incomplete';
+      statusColor = 'text-red-500';
+    }
+  }
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -46,8 +64,14 @@ const PlantDetails = ({ plant, plantInfo, onClose }) => {
             <img
               src={plantInfo.image}
               alt={plantInfo.name}
-              className="h-40"
+              className={`h-40 ${plantStatus === 'failed' ? 'opacity-50 grayscale' : ''}`}
             />
+          </div>
+          
+          <div className="mb-4 text-center">
+            <span className={`${statusColor} font-medium text-lg`}>
+              {statusText}
+            </span>
           </div>
           
           <div className="space-y-4">
@@ -56,15 +80,27 @@ const PlantDetails = ({ plant, plantInfo, onClose }) => {
               <ul className="mt-2 space-y-2">
                 <li className="flex justify-between">
                   <span>Pomodoros Completed</span>
-                  <span className="font-medium">{plant.pomodoros}</span>
+                  <span className="font-medium">{plant.pomodoros || 0}</span>
                 </li>
                 <li className="flex justify-between">
                   <span>Total Focus Time</span>
                   <span className="font-medium">{formatDuration(plant.focusTime)}</span>
                 </li>
+                {plant.pauseTime > 0 && (
+                  <li className="flex justify-between">
+                    <span>Pause Time</span>
+                    <span className={`font-medium ${plant.pauseTime > 300 ? 'text-red-500' : 'text-yellow-500'}`}>
+                      {formatDuration(plant.pauseTime)}
+                    </span>
+                  </li>
+                )}
                 <li className="flex justify-between">
                   <span>Grown On</span>
                   <span className="font-medium">{formatDate(plant.completedAt)}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Session Type</span>
+                  <span className="font-medium">{plantInfo.growthTime || 'Standard Growth'}</span>
                 </li>
               </ul>
             </div>
@@ -75,6 +111,22 @@ const PlantDetails = ({ plant, plantInfo, onClose }) => {
                 <p className="mt-2 text-gray-600 dark:text-gray-300">{plant.notes}</p>
               </div>
             )}
+            
+            {/* Growth Success Rate Information */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">PomoHarvest Info</h4>
+              <p className="mt-2 text-gray-600 dark:text-gray-300 text-sm">
+                {plantStatus === 'success' ? (
+                  `Successfully grew a ${plantInfo.name.toLowerCase()} with ${formatDuration(plant.focusTime)} of focused work. Great job!`
+                ) : plant.wilted ? (
+                  `This ${plantInfo.name.toLowerCase()} wilted due to too many pauses. Remember, every minute paused impacts your harvest's health.`
+                ) : plant.earlyBreak ? (
+                  `You harvested this ${plantInfo.name.toLowerCase()} early by taking a break before completion. It still grew, but didn't reach its full potential.`
+                ) : (
+                  `This ${plantInfo.name.toLowerCase()} didn't complete its growth cycle. Keep working on your focus sessions!`
+                )}
+              </p>
+            </div>
             
             <div className="pt-4">
               <button

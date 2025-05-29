@@ -1,8 +1,20 @@
-import React from 'react';
+// src/pages/HomePage.js
+import React, { useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const HomePage = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
+  
   return (
     <Layout>
       <div className="max-w-5xl mx-auto py-12 px-4">

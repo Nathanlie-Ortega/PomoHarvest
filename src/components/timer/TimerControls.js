@@ -4,11 +4,13 @@ const TimerControls = ({
   isActive, 
   isPaused, 
   isBreak,
+  breakEnabled,
   onStart, 
   onPause, 
   onResume, 
   onReset,
-  onSkipBreak
+  onSkipBreak,
+  onBreak
 }) => {
   return (
     <div className="flex items-center justify-center space-x-4">
@@ -41,7 +43,7 @@ const TimerControls = ({
             aria-label="Reset timer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0018 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
           </button>
@@ -67,9 +69,23 @@ const TimerControls = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
           </button>
+          
+          {/* Break button - only show during focus time if break is enabled */}
+          {!isBreak && breakEnabled && (
+            <button
+              onClick={onBreak}
+              className="btn bg-secondary-500 hover:bg-secondary-600 text-white rounded-full p-3"
+              aria-label="Take a break"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" />
+              </svg>
+            </button>
+          )}
         </>
       )}
       
+      {/* Skip break button - only show during break time */}
       {isBreak && (
         <button
           onClick={onSkipBreak}
