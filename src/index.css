@@ -848,274 +848,6 @@
   z-index: 1;
 }
 
-/* FIXED: Realistic Field Crops */
-.field-crops {
-  position: absolute;
-  top: 15px;
-  width: 100%;
-  height: 70px;
-  z-index: 4;
-}
-
-.crop-row-main {
-  position: absolute;
-  top: 5px;
-  width: 100%;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: flex-end;
-  z-index: 5;
-}
-
-.crop-row-back {
-  position: absolute;
-  top: -10px;
-  width: 100%;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: flex-end;
-  opacity: 0.8;
-  transform: scale(0.85);
-  z-index: 4;
-}
-
-.crop-plant {
-  width: 24px;
-  height: 30px;
-  position: relative;
-  animation: cropSway 4s ease-in-out infinite;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* FIXED: Carrot crops - Realistic green tops */
-.carrot-crop::before {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 25px;
-  background: linear-gradient(to top, #228B22, #32CD32, #00FF00);
-  border-radius: 50% 50% 20% 20%;
-  clip-path: polygon(20% 100%, 0% 20%, 30% 0%, 70% 0%, 100% 20%, 80% 100%);
-  box-shadow: 
-    -3px -2px 0 #32CD32,
-    3px -2px 0 #228B22,
-    0 -4px 0 #00FF00;
-}
-
-.carrot-crop::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 15px;
-  background: #228B22;
-  border-radius: 2px;
-}
-
-/* FIXED: Tomato crops - Realistic plants with tomatoes */
-.tomato-crop::before {
-  content: '🍅';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 16px;
-  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-.tomato-crop::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 28px;
-  background: linear-gradient(to top, #8B4513, #228B22);
-  border-radius: 2px;
-  box-shadow: 
-    -6px 5px 0 2px #228B22,
-    6px 5px 0 2px #228B22,
-    -4px 10px 0 1px #32CD32,
-    4px 10px 0 1px #32CD32;
-}
-
-/* FIXED: Wheat crops - Realistic golden stalks */
-.wheat-crop::before {
-  content: '🌾';
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 18px;
-  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
-}
-
-.wheat-crop::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3px;
-  height: 32px;
-  background: linear-gradient(to top, #8B4513, #DAA520, #FFD700);
-  border-radius: 1px;
-  box-shadow: 
-    -2px 8px 0 1px #DAA520,
-    2px 8px 0 1px #DAA520;
-}
-
-@keyframes cropSway {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25% { transform: translateY(-1px) rotate(1deg); }
-  50% { transform: translateY(-2px) rotate(0deg); }
-  75% { transform: translateY(-1px) rotate(-1deg); }
-}
-
-/* FIXED: Bigger and Better Positioned Trees */
-.side-trees {
-  position: absolute;
-  top: -60px;
-  width: 100%;
-  height: 100px;
-  z-index: 6;
-}
-
-.tree {
-  position: absolute;
-  font-size: 48px; /* Much bigger trees */
-  animation: treeWave 8s ease-in-out infinite;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-.tree-left {
-  left: 2%;
-  animation-delay: 0s;
-}
-
-.tree-right {
-  right: 2%;
-  animation-delay: -4s;
-}
-
-/* Additional trees for more forest feel */
-.side-trees::before {
-  content: '🌲';
-  position: absolute;
-  left: 8%;
-  top: 10px;
-  font-size: 42px;
-  animation: treeWave 9s ease-in-out infinite;
-  animation-delay: -2s;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-.side-trees::after {
-  content: '🌳';
-  position: absolute;
-  right: 8%;
-  top: 15px;
-  font-size: 44px;
-  animation: treeWave 7s ease-in-out infinite;
-  animation-delay: -6s;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes treeWave {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(2deg); }
-  75% { transform: rotate(-2deg); }
-}
-
-/* FIXED: Working Farmers */
-.farmers-working {
-  position: absolute;
-  top: -35px;
-  width: 100%;
-  height: 60px;
-  z-index: 7;
-}
-
-.farmer {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: farmerWork 5s ease-in-out infinite;
-}
-
-.farmer-boy {
-  left: 20%;
-  animation-delay: 0s;
-}
-
-.farmer-girl {
-  right: 20%;
-  animation-delay: -2.5s;
-}
-
-.farmer-person {
-  font-size: 28px;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
-  margin-bottom: 4px;
-}
-
-.farmer-basket {
-  font-size: 14px;
-  animation: basketWork 4s ease-in-out infinite;
-  opacity: 0.9;
-}
-
-@keyframes farmerWork {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25% { transform: translateY(-4px) rotate(-3deg); }
-  50% { transform: translateY(-2px) rotate(0deg); }
-  75% { transform: translateY(-3px) rotate(3deg); }
-}
-
-@keyframes basketWork {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(8deg) scale(1.1); }
-}
-
-/* FIXED: Dense Natural Grass */
-.natural-grass {
-  position: absolute;
-  top: 8px;
-  width: 100%;
-  height: 35px;
-  z-index: 3;
-}
-
-.grass-blade {
-  position: absolute;
-  width: 3px;
-  height: 18px;
-  background: linear-gradient(to top, #228B22, #32CD32, #00FF7F);
-  border-radius: 3px 3px 0 0;
-  animation: grassWave 4s ease-in-out infinite;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* Add random grass heights and delays */
-.grass-blade:nth-child(3n) { height: 22px; animation-delay: -1s; }
-.grass-blade:nth-child(3n+1) { height: 16px; animation-delay: -2s; }
-.grass-blade:nth-child(3n+2) { height: 20px; animation-delay: -0.5s; }
-
-@keyframes grassWave {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(6deg); }
-  75% { transform: rotate(-6deg); }
-}
-
 
 
 
@@ -1784,7 +1516,7 @@ body.night-mode .ground-reflection {
 }
 
 .dust-top::before {
-  content: '💨';
+
 }
 
 /* Additional dust for fourth tractor */
@@ -1797,7 +1529,7 @@ body.night-mode .ground-reflection {
 }
 
 .dust-fourth::before {
-  content: '💨';
+
 }
 
 @keyframes dustFollowTractorBottom {
@@ -2219,3 +1951,75 @@ body.night-mode .ground-reflection {
     font-size: 32px; 
   }
 }
+
+
+.card {
+  @apply rounded-xl shadow-lg backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200;
+  /* ENHANCED: Glass effect with light RGB(188,210,208) */
+  background: rgba(188, 210, 208, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 2px solid rgba(34, 197, 94, 0.25);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    0 6px 20px rgba(0, 0, 0, 0.06),
+    
+}
+
+.card:hover {
+  /* ENHANCED: Better hover effects */
+  transform: translateY(-3px);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+
+  
+}
+
+/* Focus Session Setup Modal - Change from white to farm theme */
+.modal-container,
+.modal-content,
+.bg-white {
+  background-color: rgba(188, 210, 208, 0.85) !important; /* Light yellow farm theme */
+  border: 2px solid rgba(139, 69, 19, 0.3) !important;
+  backdrop-filter: blur(15px);
+}
+
+.dark .modal-container,
+.dark .modal-content,
+.dark .bg-white {
+  background: rgba(31, 41, 55, 0.95) !important; /* Dark theme */
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+}
+
+/* Add New Task Modal - Same treatment */
+.task-modal,
+.add-task-modal {
+  background-color: rgba(188, 210, 208, 0.85) !important;
+  border: 2px solid rgba(139, 69, 19, 0.3) !important;
+  backdrop-filter: blur(15px);
+}
+
+.dark .task-modal,
+.dark .add-task-modal {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+}
+
+/* General modal fix for any white modals */
+[role="dialog"],
+.dialog,
+.modal {
+  background-color: rgba(188, 210, 208, 0.85) !important;
+  border: 2px solid rgba(139, 69, 19, 0.3) !important;
+  backdrop-filter: blur(15px);
+}
+
+.dark [role="dialog"],
+.dark .dialog,
+.dark .modal {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+}
+
+

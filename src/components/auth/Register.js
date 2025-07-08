@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -11,8 +11,16 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const { signup, currentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect if user is already authenticated or becomes authenticated
+  useEffect(() => {
+    if (currentUser) {
+      console.log("User authenticated, redirecting to dashboard");
+      navigate('/dashboard', { replace: true });
+    }
+  }, [currentUser, navigate]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,10 +36,17 @@ const Register = () => {
       console.log("Attempting to create account with:", { email, displayName });
       
       await signup(email, password, displayName);
-      console.log("Account created successfully, redirecting to dashboard");
+      console.log("Account created successfully");
       
-      // Immediate navigation to dashboard
-      navigate('/dashboard');
+      // The useEffect will handle the redirect when currentUser updates
+      // But we can also add a small delay and force navigation as fallback
+      setTimeout(() => {
+        if (!currentUser) {
+          console.log("Fallback navigation to dashboard");
+          navigate('/dashboard', { replace: true });
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error('Registration error:', error);
       
@@ -80,6 +95,7 @@ const Register = () => {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           
@@ -92,6 +108,7 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           
@@ -106,11 +123,13 @@ const Register = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength="6"
+                disabled={loading}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={togglePasswordVisibility}
+                disabled={loading}
               >
                 {showPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,15 +156,17 @@ const Register = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength="6"
+                disabled={loading}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={toggleConfirmPasswordVisibility}
+                disabled={loading}
               >
                 {showConfirmPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                   </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,7 +180,7 @@ const Register = () => {
           
           <button
             type="submit"
-            className="w-full btn-primary py-3"
+            className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Sign Up'}

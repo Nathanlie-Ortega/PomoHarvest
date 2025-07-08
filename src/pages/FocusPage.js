@@ -593,6 +593,89 @@ useEffect(() => {
       return `${plantEmoji} ${plantName} has withered. -10 Garden XP 🥀`;
     }
   }, [getPlantEmoji, getPlantName]);
+
+  // NEW: Save session data immediately when Pomodoros complete
+const saveSessionData = (pomodoroCount, totalElapsed, isFullCycle = false) => {
+  console.log('=== SAVING SESSION DATA IMMEDIATELY ===');
+  console.log('Pomodoro count:', pomodoroCount);
+  console.log('Total elapsed time:', totalElapsed);
+  console.log('Is full cycle:', isFullCycle);
+  
+  const effectiveFocusTime = totalElapsed - totalPauseTime;
+  const isSuccessful = !sessionFailed && !excessiveBreaks && effectiveFocusTime >= (15 * 60);
+  
+  console.log('Effective focus time:', effectiveFocusTime);
+  console.log('Is successful:', isSuccessful);
+  
+  if (isSuccessful && effectiveFocusTime > 0) {
+    const today = new Date().toLocaleDateString('en-CA');
+    
+    // Load existing stats
+    const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+    if (!statsLocal[today]) {
+      statsLocal[today] = {
+        completed: 0,
+        totalFocusTime: 0,
+        failed: 0,
+        growthXP: 0,
+        harvestXP: 0,
+        witherCount: 0,
+        pausePenalties: 0
+      };
+    }
+    
+    // Add this session's data
+    statsLocal[today].completed += pomodoroCount;
+    statsLocal[today].totalFocusTime += effectiveFocusTime;
+    statsLocal[today].growthXP += pomodoroCount % 4; // Growth XP
+    
+    // If it's a full cycle (4 Pomodoros), add Harvest XP
+    if (isFullCycle) {
+      statsLocal[today].harvestXP += 1;
+    }
+    
+    console.log('Saving to localStorage:', { today, stats: statsLocal[today] });
+    localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
+    
+    // Save session summary
+    const sessionSummary = {
+      focusTime: effectiveFocusTime,
+      pauseTime: totalPauseTime,
+      isSuccessful: true,
+      plantType: focusSettings.selectedPlant || 'carrot',
+      completedAt: new Date().toISOString(),
+      pomodoroCount: pomodoroCount,
+      isFullCycle: isFullCycle
+    };
+    
+    localStorage.setItem('lastSession', JSON.stringify(sessionSummary));
+    console.log('Saved session summary:', sessionSummary);
+    
+    // Trigger dashboard refresh
+    try {
+      if (window.refreshDashboardStats) {
+        console.log('Calling dashboard refresh function');
+        window.refreshDashboardStats();
+      }
+      
+      window.dispatchEvent(new CustomEvent('statsUpdated', { 
+        detail: { today, focusTime: effectiveFocusTime, sessionSummary } 
+      }));
+      
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'pomoStats',
+        newValue: JSON.stringify(statsLocal),
+        storageArea: localStorage
+      }));
+      
+      console.log('Dashboard refresh triggered');
+    } catch (error) {
+      console.error('Error triggering dashboard refresh:', error);
+    }
+  }
+  
+  console.log('=== END SAVING SESSION DATA ===');
+};
   
   // Initialize quotes on component mount
   useEffect(() => {
@@ -724,7 +807,7 @@ useEffect(() => {
       
       timer.current = setInterval(() => {
         setTimeLeft(prevTime => {
-          if (prevTime <= 1) {
+if (prevTime <= 1) {
             console.log('Focus timer completed!');
             clearInterval(timer.current);
             timer.current = null;
@@ -740,6 +823,10 @@ useEffect(() => {
               }
               setFocusCount(newFocusCount);
               console.log(`Focus count incremented to ${newFocusCount}`);
+              
+              // IMMEDIATELY SAVE SESSION DATA
+              const isFullCycle = newFocusCount === 4;
+              saveSessionData(newFocusCount, elapsedTime, isFullCycle);
               
               // For XP tracking: Increment Growth XP by 1 for each Pomodoro
               setGrowthXP(newFocusCount);
@@ -811,6 +898,8 @@ useEffect(() => {
               
               return 0;
             } else {
+              // No break time set - save data and complete session
+              saveSessionData(focusCount + 1, elapsedTime, (focusCount + 1) === 4);
               completeSession();
               return 0;
             }
@@ -1129,6 +1218,55 @@ useEffect(() => {
       // NOTE: timer.current cleanup is handled by individual timer effects
     };
   }, []);
+
+
+  
+
+  // Farm scene animations - ADD THIS AFTER THE GLOBAL CLEANUP useEffect
+useEffect(() => {
+  // Only initialize farm animations once when component mounts
+  const initializeFarmAnimations = () => {
+    // Windmill rotation
+    const windmill = document.querySelector('.windmill-blades');
+    if (windmill) {
+      windmill.style.animation = 'windmillRotate 3s linear infinite';
+    }
+
+    // Grass swaying
+    const grassBlades = document.querySelectorAll('.grass-blade');
+    grassBlades.forEach((blade, index) => {
+      blade.style.animation = `grassSway ${2 + (index % 3) * 0.5}s ease-in-out infinite alternate`;
+      blade.style.animationDelay = `${index * 0.2}s`;
+    });
+
+    // Cow walking
+    const cow = document.querySelector('.walking-cow');
+    if (cow) {
+      cow.style.animation = 'cowWalk 25s linear infinite';
+    }
+
+    // Cow tail wagging
+    const cowTail = document.querySelector('.cow-tail');
+    if (cowTail) {
+      cowTail.style.animation = 'tailWag 2s ease-in-out infinite alternate';
+    }
+
+    // Cow legs animation
+    const cowLegs = document.querySelectorAll('.cow-leg');
+    cowLegs.forEach((leg, index) => {
+      leg.style.animation = `legWalk ${1.5}s ease-in-out infinite alternate`;
+      leg.style.animationDelay = `${index * 0.2}s`;
+    });
+  };
+
+  // Initialize animations after a short delay to ensure DOM is ready
+  const timer = setTimeout(initializeFarmAnimations, 100);
+  
+  return () => clearTimeout(timer);
+}, []); // Empty dependency array - only run once on mount
+
+
+
   
   // Start break - UPDATED to handle continuous penalties
   const startBreak = () => {
@@ -1192,11 +1330,127 @@ useEffect(() => {
   };
   
   // NEW: Handle completing a full cycle without penalties - SIMPLIFIED
-  const handleCompleteCycle = () => {
-    console.log('Complete button clicked - navigating directly to dashboard');
-    // Just navigate directly - don't try to save anything complex
-    navigate('/dashboard');
+
+// ADD this new auto-save function to your FocusPage.js:
+
+const autoSaveSessionData = () => {
+  console.log('=== AUTO-SAVING 4/4 POMODORO COMPLETION ===');
+  
+  // Calculate actual focus time based on user's chosen settings
+  const userChosenFocusTimePerPomo = (focusSettings.focusHours * 3600) + (focusSettings.focusMinutes * 60);
+  const totalUserFocusTime = userChosenFocusTimePerPomo * 4; // 4 Pomodoros
+  
+  console.log('Auto-saving total focus time:', totalUserFocusTime, 'seconds (', Math.floor(totalUserFocusTime / 60), 'minutes)');
+  
+  const today = new Date().toLocaleDateString('en-CA');
+  
+  // Read current localStorage value
+  const currentStats = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+  const currentTotalForToday = currentStats[today]?.totalFocusTime || 0;
+  
+  // Calculate new total
+  const newTotal = currentTotalForToday + totalUserFocusTime;
+  console.log('Auto-save: Adding', totalUserFocusTime, 'to current', currentTotalForToday, '= new total:', newTotal);
+  
+  // Ensure today's entry exists
+  if (!currentStats[today]) {
+    currentStats[today] = {
+      completed: 0,
+      totalFocusTime: 0,
+      failed: 0,
+      growthXP: 0,
+      harvestXP: 0,
+      witherCount: 0,
+      pausePenalties: 0
+    };
+  }
+  
+  // Save the new total
+  currentStats[today].totalFocusTime = newTotal;
+  currentStats[today].completed = (currentStats[today].completed || 0) + 4;
+  currentStats[today].growthXP = (currentStats[today].growthXP || 0) + 4;
+  currentStats[today].harvestXP = (currentStats[today].harvestXP || 0) + 1;
+  
+  // Save to localStorage
+  localStorage.setItem('pomoStats', JSON.stringify(currentStats));
+  console.log('✅ AUTO-SAVED SESSION DATA');
+  
+  // Save session summary
+  const sessionSummary = {
+    focusTime: totalUserFocusTime,
+    pauseTime: totalPauseTime || 0,
+    isSuccessful: true,
+    plantType: focusSettings.selectedPlant || 'carrot',
+    completedAt: new Date().toISOString(),
+    pomodoroCount: 4,
+    isFullCycle: true
   };
+  localStorage.setItem('lastSession', JSON.stringify(sessionSummary));
+  
+  // Trigger dashboard refresh
+  if (window.refreshDashboardStats) {
+    window.refreshDashboardStats();
+  }
+  
+  window.dispatchEvent(new CustomEvent('statsUpdated'));
+  
+  console.log('=== END AUTO-SAVE ===');
+};
+
+// REPLACE your existing useEffect that handles completing full cycles with this:
+
+useEffect(() => {
+  // Auto-save when a full cycle is completed (4/4 Pomodoros completed)
+  if (completedFullCycle && isBreak) {
+    console.log('Full cycle completed - auto-saving session data immediately');
+    
+    // Add a small delay to ensure all states are settled
+    const autoSaveTimer = setTimeout(() => {
+      // Check if we haven't already auto-saved this session (to avoid double-saving)
+      const lastSession = JSON.parse(localStorage.getItem('lastSession') || '{}');
+      const lastSaveTime = lastSession.completedAt ? new Date(lastSession.completedAt).getTime() : 0;
+      const currentTime = Date.now();
+      
+      // Only auto-save if the last save was more than 10 seconds ago OR if it's a different session
+      if (currentTime - lastSaveTime > 10000 || !lastSession.isFullCycle) {
+        console.log('Auto-saving because no recent full cycle save detected');
+        autoSaveSessionData();
+      } else {
+        console.log('Skipping auto-save - recent full cycle save detected');
+      }
+    }, 2000); // 2 second delay
+    
+    return () => clearTimeout(autoSaveTimer);
+  }
+}, [completedFullCycle, isBreak, focusSettings.focusHours, focusSettings.focusMinutes, focusSettings.selectedPlant, totalPauseTime]);
+
+// UPDATE your handleCompleteCycle function to this simplified version:
+
+const handleCompleteCycle = () => {
+  console.log('Complete button clicked - data already auto-saved, just navigating');
+  
+  // Data was already saved by autoSaveSessionData when 4/4 completed
+  // Just navigate to dashboard
+  navigate('/dashboard');
+};
+
+// UPDATE the "Start a New Pomo" button function (if you have one) or add this:
+
+const handleStartNewPomo = () => {
+  console.log('Start New Pomo clicked - data already auto-saved, resetting for new cycle');
+  
+  // Data was already saved by autoSaveSessionData when 4/4 completed
+  // Reset for new cycle
+  setCompletedFullCycle(false);
+  setFocusCount(0);
+  setGrowthXP(0);
+  setTimeLeft(initialSeconds);
+  setIsBreak(false);
+  setIsActive(true);
+  setShowSuccessMessage(false);
+  
+  playSound('start');
+};
   
   // FIXED: Cancel quit dialog and resume timers - DON'T change timer states
   const cancelQuit = () => {
@@ -1511,41 +1765,8 @@ useEffect(() => {
               ))}
             </div>
             
-            {/* Background crop rows */}
-            <div className="crop-row-back">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className={`crop-plant ${['carrot', 'tomato', 'wheat'][i % 3]}-crop`}></div>
-              ))}
-            </div>
           </div>
           
-          {/* Trees on sides */}
-          <div className="side-trees">
-            <div className="tree tree-left">🌳</div>
-            <div className="tree tree-right">🌲</div>
-          </div>
-          
-          {/* FIXED: Working farmers */}
-          <div className="farmers-working">
-            <div className="farmer farmer-boy">
-              <div className="farmer-person">👨‍🌾</div>
-              <div className="farmer-basket">🧺</div>
-            </div>
-            <div className="farmer farmer-girl">
-              <div className="farmer-person">👩‍🌾</div>
-              <div className="farmer-basket">🪣</div>
-            </div>
-          </div>
-          
-          {/* Natural grass */}
-          <div className="natural-grass">
-            {Array.from({ length: 40 }, (_, i) => (
-              <div key={i} className="grass-blade" style={{ left: `${i * 2.5}%` }}></div>
-            ))}
-          </div>
-
-
-
           
           {/* FIXED: Tractor with rake */}
           <div className="tractor-area">
@@ -1744,19 +1965,19 @@ useEffect(() => {
             {/* Raking Lines on Ground for All Four Tractors */}
             <div className="rake-lines"></div>
           </div>
-
-
           
         </div>
 
 
 
 
+
+
+
+          
+
+
       </div>
-
-
-
-
 
         {/* Album Art Background Overlay (when Spotify is playing) */}
         {albumArtBackground && (
