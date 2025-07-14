@@ -8,7 +8,7 @@ import { AuthProvider } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import GardenPage from './pages/GardenPage';
-import StatsPage from './pages/StatsPage';
+import LeaderboardPage from './pages/LeaderboardPage'; // CHANGED: Stats → Leaderboard
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -26,7 +26,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/garden" element={<GardenPage />} />
-              <Route path="/stats" element={<StatsPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} /> {/* CHANGED: /stats → /leaderboard */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import TodoList from '../components/todo/TodoList';
+import { recordHarvestFromFocus } from '../utils/statsSync';
 import { useAuth } from '../hooks/useAuth';
 import { useSound } from '../hooks/useSound';
 import { doc, updateDoc, arrayUnion, getDoc, increment } from 'firebase/firestore';
@@ -46,6 +47,22 @@ const FocusPage = () => {
   
   // NEW: Track if user completed a full 4/4 Pomodoro cycle
   const [completedFullCycle, setCompletedFullCycle] = useState(false);
+
+
+  // TEMPORARY DEBUG FUNCTION - Remove after fixing
+const debugXPData = () => {
+  const stats = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+  console.log('=== CURRENT LOCALSTORAGE DATA ===');
+  Object.keys(stats).forEach(date => {
+    console.log(`${date}:`, stats[date]);
+  });
+  console.log('=== END LOCALSTORAGE DATA ===');
+};
+
+// Call it when component mounts
+useEffect(() => {
+  debugXPData();
+}, []);
   
   // UI states
   const [showQuitDialog, setShowQuitDialog] = useState(false);
@@ -81,7 +98,8 @@ const FocusPage = () => {
   
   // Gardener Level states
   const [growthXP, setGrowthXP] = useState(0); // Temporary XP that resets after 4 Pomodoros
-  const [harvestXP, setHarvestXP] = useState(0); // Permanent XP from completed cycles
+  const [harvestXP, setHarvestXP] = useState(0);
+  const [currentDisplayXP, setCurrentDisplayXP] = useState(0);
   const [gardenerLevel, setGardenerLevel] = useState(1);
   const [xpToNextLevel, setXpToNextLevel] = useState(10); // Based on Fast Early Growth model
   const [xpPercentage, setXpPercentage] = useState(0);
@@ -161,6 +179,8 @@ const FocusPage = () => {
         return '🍅';
       case 'wheat':
         return '🌾';
+      case 'corn':
+        return '🌽';
       default:
         return '🌱';
     }
@@ -279,7 +299,13 @@ const FocusPage = () => {
   
   // FIXED: Function to deduct Garden XP (withering penalty)
   const deductGardenXP = useCallback((amount = 3) => {
-    console.log(`Deducting ${amount} Garden XP from current total`);
+    console.log(`deductGardenXP called with amount: ${amount} - BUT this function should NOT be used for quit!`);
+    
+    // This function should only be used for pause/break penalties, NOT for quit
+    if (amount === 10) {
+      console.log('WARNING: deductGardenXP called with 10 - this should be handled directly in confirmQuit');
+      return; // Don't process quit penalties here
+    }
     
     // Update localStorage immediately to persist the deduction
     const today = new Date().toISOString().split('T')[0];
@@ -299,10 +325,21 @@ const FocusPage = () => {
     statsLocal[today].witherCount = (statsLocal[today].witherCount || 0) + amount;
     localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
     
-    // Also update the wither count state for immediate UI update
-    setWitherCount(prev => prev + amount);
+    // FIXED: Force immediate state update to trigger recalculation
+    setWitherCount(prev => {
+      const newWitherCount = prev + amount;
+      console.log(`Wither count updated to ${newWitherCount}, this deducts ${amount} Garden XP`);
+      
+      // Force multiple re-renders to ensure display updates
+      setTimeout(() => {
+        setGardenerLevel(current => current + 0); // Force level recalculation
+        setXpPercentage(current => current + 0); // Force percentage recalculation
+      }, 50);
+      
+      return newWitherCount;
+    });
     
-    console.log(`Successfully added ${amount} to wither count. This will deduct ${amount} Garden XP.`);
+    console.log(`Successfully added ${amount} to wither count. This deducts ${amount} Garden XP immediately.`);
   }, []);
   
   // UPDATED: Check if session is active (for navigation protection) - includes both focus and break
@@ -409,124 +446,181 @@ const FocusPage = () => {
   }, [isSessionActive, handleNavigationAttempt]);
   
   // FIXED: Calculate gardener level and XP with proper Garden XP deduction
-  useEffect(() => {
-    console.log('Recalculating gardener level and XP');
-    
-    // Load current Harvest XP from localStorage or set default
-    const savedStats = JSON.parse(localStorage.getItem('pomoStats') || '{}');
-    let totalHarvestXP = 0;
-    let totalWitherPenalty = 0;
-    
-    // Sum up harvest points and wither penalties
-    Object.values(savedStats).forEach(day => {
-      if (day.harvestXP) totalHarvestXP += day.harvestXP;
-      if (day.witherCount) totalWitherPenalty += day.witherCount;
-    });
-    
-    console.log(`Total Harvest XP: ${totalHarvestXP}, Total Wither Penalty: ${totalWitherPenalty}`);
-    
-    // Calculate Garden XP - 1 Harvest XP = 10 Garden XP, then subtract full wither penalty
-    // FIXED: Remove the % 10 - we want to subtract the FULL penalty from Garden XP
-    const totalGardenXP = Math.max(0, (totalHarvestXP * 10) - totalWitherPenalty);
-    
-    // Calculate effective Harvest XP for display (but Garden XP calculation uses the full penalty)
-    const effectiveHarvestXP = Math.max(0, totalHarvestXP - Math.floor(totalWitherPenalty / 10));
-    
-    console.log(`Effective Harvest XP: ${effectiveHarvestXP}, Final Garden XP: ${totalGardenXP}`);
-    setHarvestXP(effectiveHarvestXP);
-    
-    // Calculate level based on Fast Early Growth model
-    let level = 1;
-    const xpLevels = [0, 10, 25, 45, 70, 100, 135, 175, 220]; // Cumulative XP needed for each level
-    
-    for (let i = 1; i < xpLevels.length; i++) {
-      if (totalGardenXP >= xpLevels[i-1] && totalGardenXP < xpLevels[i]) {
-        level = i;
-        // Calculate XP needed for next level and percentage
-        const currentLevelBaseXP = xpLevels[i-1];
-        const nextLevelXP = xpLevels[i];
-        const xpNeeded = nextLevelXP - currentLevelBaseXP;
-        const xpProgress = totalGardenXP - currentLevelBaseXP;
-        const percentage = Math.max(0, (xpProgress / xpNeeded) * 100);
+      // FIXED: Calculate gardener level and XP with proper Garden XP deduction
+      useEffect(() => {
+        console.log('Recalculating gardener level and XP');
         
-        setGardenerLevel(level);
-        setXpToNextLevel(nextLevelXP);
-        setXpPercentage(percentage);
-        break;
+        const handleForceRecalculation = (event) => {
+          console.log('Force recalculation triggered', event.detail);
+          // Force multiple immediate updates
+          setWitherCount(current => current + 0.001);
+          setGardenerLevel(current => current + 0);
+          setXpPercentage(current => current + 0);
+          setCurrentDisplayXP(current => current + 0);
+          
+          // Cleanup
+          setTimeout(() => {
+            setWitherCount(current => Math.floor(current * 1000) / 1000);
+          }, 1);
+        };
+        
+        window.addEventListener('forceXPRecalculation', handleForceRecalculation);
+        
+        // Cleanup
+        return () => {
+          window.removeEventListener('forceXPRecalculation', handleForceRecalculation);
+        };
+      }, []); // Empty dependency array for the event listener
+
+      // Main XP calculation useEffect
+      useEffect(() => {
+        console.log('Recalculating gardener level and XP');
+      
+      // Load current stats from localStorage
+      const savedStats = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+      let totalHarvestXP = 0;
+      let totalWitherPenalty = 0;
+      
+      // Sum up harvest points and wither penalties
+      Object.values(savedStats).forEach(day => {
+        if (day.harvestXP) totalHarvestXP += day.harvestXP;
+        if (day.witherCount) totalWitherPenalty += day.witherCount;
+      });
+      
+      console.log(`Focus Page XP Calculation: Raw Harvest XP: ${totalHarvestXP}, Wither Penalty: ${totalWitherPenalty}`);
+
+      // FIXED: Calculate displayed Harvest XP by subtracting wither penalties converted to Harvest XP
+      // Every 10 Garden XP penalty = 1 Harvest XP penalty
+      const harvestXPPenalty = Math.floor(totalWitherPenalty / 10);
+      const displayedHarvestXP = Math.max(0, totalHarvestXP - harvestXPPenalty);
+
+      // Calculate Garden XP - 1 Harvest XP = 10 Garden XP, then subtract remaining wither penalties
+      const baseGardenXP = totalHarvestXP * 10;
+      const currentGardenXP = Math.max(0, baseGardenXP - totalWitherPenalty);
+
+      console.log(`=== DETAILED XP BREAKDOWN ===`);
+      console.log(`Raw Harvest XP from localStorage: ${totalHarvestXP}`);
+      console.log(`Total Wither Penalty from localStorage: ${totalWitherPenalty}`);
+      console.log(`Base Garden XP (Harvest XP * 10): ${baseGardenXP}`);
+      console.log(`Current Garden XP (after penalties): ${currentGardenXP}`);
+      console.log(`Displayed Harvest XP: ${displayedHarvestXP}`);
+      console.log(`Progress Bar Should Show: ${currentGardenXP} XP`);
+      console.log(`=== END BREAKDOWN ===`);
+
+      console.log(`Garden XP Calculation: Base: ${baseGardenXP}, After Penalties: ${currentGardenXP}, Display: ${currentGardenXP}`);
+      
+      // Calculate level based on Fast Early Growth model
+      let level = 1;
+      const xpLevels = [0, 10, 25, 45, 70, 100, 135, 175, 220];
+      
+      // Find current level
+      if (currentGardenXP >= 220) {
+        // Beyond defined levels
+        const excess = currentGardenXP - 220;
+        level = 9 + Math.floor(excess / 45);
+      } else {
+        for (let i = 0; i < xpLevels.length - 1; i++) {
+          if (currentGardenXP >= xpLevels[i] && currentGardenXP < xpLevels[i + 1]) {
+            level = i + 1;
+            break;
+          }
+        }
+        
+        // Handle exact matches
+        for (let i = 1; i < xpLevels.length; i++) {
+          if (currentGardenXP === xpLevels[i]) {
+            level = i + 1;
+            break;
+          }
+        }
       }
-    }
-    
-    // If they're beyond our defined levels, use a higher level
-    if (totalGardenXP >= xpLevels[xpLevels.length - 1]) {
-      setGardenerLevel(xpLevels.length);
-      // For levels beyond our table, we'll continue the pattern
-      const lastGapIncrease = 40;
-      const levelBeyondTable = Math.floor((totalGardenXP - xpLevels[xpLevels.length - 1]) / (lastGapIncrease + 5)) + xpLevels.length;
-      setGardenerLevel(levelBeyondTable);
       
-      // Calculate percentage for beyond-table levels
-      const baseXP = xpLevels[xpLevels.length - 1] + (levelBeyondTable - xpLevels.length) * (lastGapIncrease + 5);
-      const nextLevelXP = baseXP + (lastGapIncrease + 5);
-      const percentage = Math.max(0, ((totalGardenXP - baseXP) / (nextLevelXP - baseXP)) * 100);
+      // Calculate next level XP and percentage
+      let nextLevelXP;
+      let percentage;
       
-      setXpPercentage(percentage);
+      if (level <= xpLevels.length) {
+        nextLevelXP = xpLevels[level] || (xpLevels[xpLevels.length - 1] + 45);
+        const currentLevelBaseXP = level > 1 ? xpLevels[level - 2] || 0 : 0;
+        const xpNeededForNextLevel = nextLevelXP - currentLevelBaseXP;
+        const xpProgressInCurrentLevel = currentGardenXP - currentLevelBaseXP;
+        percentage = Math.max(0, Math.min(100, (xpProgressInCurrentLevel / xpNeededForNextLevel) * 100));
+      } else {
+        // Beyond defined levels
+        const baseXP = 220 + ((level - 9) * 45);
+        nextLevelXP = baseXP + 45;
+        const xpNeeded = 45;
+        const xpProgress = currentGardenXP - baseXP;
+        percentage = Math.max(0, Math.min(100, (xpProgress / xpNeeded) * 100));
+      }
+      
+      setGardenerLevel(level);
       setXpToNextLevel(nextLevelXP);
-    }
-    
-    // Handle cases where Garden XP is negative or zero
-    if (totalGardenXP <= 0) {
-      setGardenerLevel(1);
-      setXpPercentage(0);
-      setXpToNextLevel(10);
-    }
-    
-    // Set initial growthXP based on focusCount modulo 4
-    const currentGrowthXP = focusCount % 4;
-    console.log(`Setting initial Growth XP to ${currentGrowthXP} based on focusCount=${focusCount}`);
-    setGrowthXP(currentGrowthXP);
-    
-    console.log(`Final Garden XP: ${totalGardenXP}, Level: ${level}, Percentage: ${xpPercentage}%`);
-    
-  }, [harvestXP, witherCount, focusCount]);
+      setXpPercentage(percentage);
+
+      // FIXED: Set harvestXP to the displayed value (after deducting penalties)
+      setHarvestXP(displayedHarvestXP);
+      setWitherCount(totalWitherPenalty);
+      setCurrentDisplayXP(currentGardenXP); // Set the computed current XP
+
+      console.log(`FINAL DISPLAY VALUES: Level ${level}, Current Garden XP: ${currentGardenXP}, Displayed Harvest XP: ${displayedHarvestXP}`);
+      
+      // Growth XP logic remains the same
+      if (!isBreak && focusCount === 0 && timeLeft === initialSeconds && !completedFullCycle) {
+        console.log('Starting fresh session - resetting Growth XP to 0');
+        setGrowthXP(0);
+      } else if (!completedFullCycle) {
+        const currentSessionGrowthXP = focusCount % 4;
+        console.log(`Setting Growth XP to ${currentSessionGrowthXP} based on current session progress`);
+        setGrowthXP(currentSessionGrowthXP);
+      }
+      
+      console.log(`FINAL DISPLAY VALUES: Level ${level}, Garden XP: ${currentGardenXP}, Displayed Harvest XP: ${displayedHarvestXP}`);
+      
+    }, [focusCount, witherCount, isBreak, timeLeft, initialSeconds, completedFullCycle, harvestXP]);
 
   // Update HarvestXP when there's a new harvest (when growth XP reaches EXACTLY 4)
-useEffect(() => {
-  console.log(`Current Growth XP: ${growthXP}`);
-  
-  // ONLY convert when growthXP is EXACTLY 4
-  if (growthXP === 4) {
-    console.log('CONVERTING: Growth XP is EXACTLY 4, adding 1 Harvest XP');
+// Update HarvestXP when there's a new harvest (when growth XP reaches EXACTLY 4)
+  useEffect(() => {
+    console.log(`Growth XP Conversion Check: Current Growth XP: ${growthXP}, Completed Full Cycle: ${completedFullCycle}, Is Break: ${isBreak}`);
     
-    // Explicitly update Harvest XP
-    setHarvestXP(prev => {
-      const newValue = prev + 1;
-      console.log(`Harvest XP increased to ${newValue}`);
-      return newValue;
-    });
-    
-    // Reset Growth XP after conversion
-    console.log('Resetting Growth XP to 0 after conversion');
-    setGrowthXP(0);
-    
-    // Update localStorage to persist the XP change
-    const today = new Date().toISOString().split('T')[0];
-    const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
-    if (!statsLocal[today]) {
-      statsLocal[today] = {
-        completed: 0,
-        totalFocusTime: 0,
-        failed: 0,
-        growthXP: 0,
-        harvestXP: 0,
-        witherCount: 0
-      };
+    // ONLY convert when ALL conditions are met
+    if (growthXP === 4 && completedFullCycle && isBreak) {
+      console.log('CONVERTING: Growth XP is EXACTLY 4 and cycle is complete, checking if conversion needed');
+      
+      // Check if we've already converted this cycle to prevent double-conversion
+      const today = new Date().toLocaleDateString('en-CA');
+      const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+      
+      // Only proceed if we haven't already converted today's cycle
+      if (!statsLocal[today]?.cycleConvertedToday) {
+        console.log('Cycle already converted by autoSaveSessionData - skipping manual conversion to prevent double-counting');
+        
+        // Mark that we've converted today's cycle but DON'T add XP again
+        if (!statsLocal[today]) {
+          statsLocal[today] = {
+            completed: 0,
+            totalFocusTime: 0,
+            failed: 0,
+            growthXP: 0,
+            harvestXP: 0,
+            witherCount: 0
+          };
+        }
+        
+        statsLocal[today].cycleConvertedToday = true;
+        localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
+        
+        console.log('Conversion flag set - autoSaveSessionData already handled the XP addition');
+      } else {
+        console.log('Cycle already converted today, skipping display update');
+      }
+      
+      // Reset Growth XP after conversion check
+      console.log('Resetting Growth XP to 0 after conversion');
+      setGrowthXP(0);
     }
-    statsLocal[today].harvestXP = (statsLocal[today].harvestXP || 0) + 1;
-    localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
-    
-    console.log('Converted EXACTLY 4 Growth XP to 1 Harvest XP (+10 Garden XP)');
-  }
-}, [growthXP]);
+  }, [growthXP, completedFullCycle, isBreak]);
   
   // Generate success message based on plant type and progress
   const generateSuccessMessage = useCallback((plantType, pomodoroCount) => {
@@ -542,6 +636,8 @@ useEffect(() => {
           return `${plantEmoji} ${plantName} plant ripens with discipline. +1 Harvest XP 🌿`;
         case 'wheat':
           return `${plantEmoji} ${plantName} waves golden in the wind, harvest time! +1 Harvest XP 🌿`;
+        case 'corn':
+          return `${plantEmoji} ${plantName} stands tall and proud, ready for harvest! +1 Harvest XP 🌿`;
         default:
           return `${plantEmoji} Plant fully grown and harvested! +1 Harvest XP 🌿`;
       }
@@ -554,6 +650,8 @@ useEffect(() => {
           return `${plantEmoji} ${plantName} seedling pushes through the soil. +1 Growth XP 🌱`;
         case 'wheat':
           return `${plantEmoji} ${plantName} is beginning to grow strong. +1 Growth XP 🌱`;
+        case 'corn':
+          return `${plantEmoji} ${plantName} seedling reaches toward the sky. +1 Growth XP 🌱`;
         default:
           return `${plantEmoji} Plant sprouting nicely! +1 Growth XP 🌱`;
       }
@@ -573,6 +671,8 @@ useEffect(() => {
           return `${plantEmoji} ${plantName} has wilted under pressure. -3 Garden XP 🥀`;
         case 'wheat':
           return `${plantEmoji} ${plantName} has failed to thrive. -3 Garden XP 🥀`;
+        case 'corn':
+          return `${plantEmoji} ${plantName} has withered and fallen over. -3 Garden XP 🥀`;
         default:
           return `${plantEmoji} Plant has withered from neglect. -3 Garden XP 🥀`;
       }
@@ -584,6 +684,8 @@ useEffect(() => {
           return `${plantEmoji} ${plantName} has wilted from excessive interruptions. -3 Garden XP 🥀`;
         case 'wheat':
           return `${plantEmoji} ${plantName} has lost strength from frequent pauses. -3 Garden XP 🥀`;
+        case 'corn':
+          return `${plantEmoji} ${plantName} has drooped from inconsistent care. -3 Garden XP 🥀`;
         default:
           return `${plantEmoji} Plant has weakened from excessive pausing. -3 Garden XP 🥀`;
       }
@@ -817,20 +919,36 @@ if (prevTime <= 1) {
               console.log('Focus session completed, transitioning to break');
               
               // Increment focus count but cap at 4
+              // Increment focus count but cap at 4
               let newFocusCount = focusCount + 1;
-              if (newFocusCount > 4) {
-                newFocusCount = 1; // Reset to 1 if we go over 4
-              }
               setFocusCount(newFocusCount);
               console.log(`Focus count incremented to ${newFocusCount}`);
               
               // IMMEDIATELY SAVE SESSION DATA
+              // IMMEDIATELY SAVE SESSION DATA
               const isFullCycle = newFocusCount === 4;
               saveSessionData(newFocusCount, elapsedTime, isFullCycle);
-              
+
               // For XP tracking: Increment Growth XP by 1 for each Pomodoro
               setGrowthXP(newFocusCount);
               console.log(`Growth XP set to EXACTLY ${newFocusCount} for Pomodoro ${newFocusCount}/4`);
+
+              // FORCE IMMEDIATE PROGRESS BAR UPDATE when 4/4 completes
+              // FORCE IMMEDIATE PROGRESS BAR UPDATE when 4/4 completes
+              if (isFullCycle) {
+                console.log('4/4 cycle completed - forcing immediate progress bar update');
+                
+                // DON'T manually update harvestXP here - let the autoSaveSessionData handle it
+                // This prevents double-counting the Harvest XP
+                
+                // Force multiple state updates to trigger immediate recalculation
+                setTimeout(() => {
+                  setWitherCount(current => current + 0.01); // Tiny change to trigger recalculation
+                  setTimeout(() => {
+                    setWitherCount(current => Math.floor(current)); // Reset to whole number
+                  }, 25);
+                }, 50);
+              }
               
               // INLINE: Generate success message to avoid dependencies
               const plantEmoji = focusSettings.selectedPlant === 'tomato' ? '🍅' : 
@@ -895,6 +1013,32 @@ if (prevTime <= 1) {
               console.log('Transitioning to BREAK mode with isActive=true');
               setIsBreak(true);
               setIsActive(true); // Ensure we're active for the break
+
+            // FORCE IMMEDIATE XP UPDATE when transitioning to break after 4/4
+          if (newFocusCount === 4) {
+            console.log('4/4 completed - forcing immediate XP update for break display');
+            
+            // Directly calculate and set the new XP values immediately
+            const newHarvestXP = harvestXP + 1;
+            const newCurrentDisplayXP = (newHarvestXP * 10) - witherCount;
+            
+            // Calculate new level and percentage immediately
+            const newGardenXP = newCurrentDisplayXP;
+            let newLevel = gardenerLevel;
+            let newPercentage = xpPercentage;
+            
+            // Simple level calculation
+            if (newGardenXP >= xpToNextLevel) {
+              newLevel = gardenerLevel + 1;
+            }
+            
+            // Update everything immediately
+            setHarvestXP(newHarvestXP);
+            setCurrentDisplayXP(newCurrentDisplayXP);
+            setGardenerLevel(newLevel);
+            
+            console.log(`IMMEDIATE UPDATE: Harvest XP: ${newHarvestXP}, Current XP: ${newCurrentDisplayXP}, Level: ${newLevel}`);
+          }
               
               return 0;
             } else {
@@ -954,38 +1098,64 @@ if (prevTime <= 1) {
       console.log('Setting up new break timer interval');
       timer.current = setInterval(() => {
         setBreakTimeLeft(prevTime => {
+
+
           console.log(`Break time remaining: ${prevTime}s`);
-          if (prevTime <= 1) {
-            console.log('Break timer completed!');
-            clearInterval(timer.current);
-            timer.current = null;
-            
-            setIsBreak(false);
-            
-            // If a pomodoro was completed, reset timer to initial seconds
-            if (pomodoroCompleted) {
-              console.log('Resetting focus timer because pomodoro was completed');
-              setTimeLeft(initialSeconds);
-            }
-            
-            // INLINE: Calculate break time to avoid dependencies
-            const newBreakTime = focusCount % 4 === 0 && focusCount > 0 ? 15 * 60 : (focusSettings.breakMinutes * 60 || 300);
-            
-            // Reset the break time for next time
-            setInitialBreakTime(newBreakTime);
-            setBreakTimeLeft(newBreakTime);
-            setIsActive(true); // Ensure we stay active when returning to focus
-            
-            // INLINE: Play sound to avoid dependencies
-            playSound('start');
-            
-            // Hide success message after break
-            setShowSuccessMessage(false);
-            // Clear manual break message
-            setManualBreakMessage('');
-            
-            return newBreakTime;
+
+
+      if (prevTime <= 1) {
+        console.log('Break timer completed!');
+        clearInterval(timer.current);
+        timer.current = null;
+        
+        setIsBreak(false);
+        
+        // CHECK: If this was after a completed 4/4 cycle, reset everything for new cycle
+        if (completedFullCycle) {
+          console.log('Break completed after 4/4 cycle - RESETTING FOR NEW CYCLE');
+          
+          // Reset all cycle-related states
+          setFocusCount(0); // Reset to 0 for new cycle
+          setGrowthXP(0); // Reset Growth XP
+          setCompletedFullCycle(false); // Clear completed cycle flag
+          setPomodoroCompleted(false); // Clear pomodoro completed flag
+          setTimeLeft(initialSeconds); // Reset timer to original duration
+          
+          // Calculate normal break time (not long break)
+          const normalBreakTime = focusSettings.breakMinutes * 60 || 300;
+          setInitialBreakTime(normalBreakTime);
+          setBreakTimeLeft(normalBreakTime);
+          
+          console.log('New cycle setup: Focus count = 0, Growth XP = 0, Normal break time set');
+        } else {
+          // Normal break completion (not after 4/4 cycle)
+          if (pomodoroCompleted) {
+            console.log('Resetting focus timer because pomodoro was completed');
+            setTimeLeft(initialSeconds);
           }
+          
+          // INLINE: Calculate break time based on current focus count
+          const newBreakTime = focusCount % 4 === 0 && focusCount > 0 ? 15 * 60 : (focusSettings.breakMinutes * 60 || 300);
+          
+          // Reset the break time for next time
+          setInitialBreakTime(newBreakTime);
+          setBreakTimeLeft(newBreakTime);
+        }
+        
+        setIsActive(true); // Ensure we stay active when returning to focus
+        
+        // INLINE: Play sound to avoid dependencies
+        playSound('start');
+        
+        // Hide success message after break
+        setShowSuccessMessage(false);
+        // Clear manual break message
+        setManualBreakMessage('');
+        
+        return initialSeconds; // Return to focus time
+      }
+
+
           return prevTime - 1;
         });
       }, 1000);
@@ -1007,25 +1177,40 @@ if (prevTime <= 1) {
         timer.current = null;
       }
     };
-  }, [isBreak, isActive, initialSeconds, pomodoroCompleted, focusCount, focusSettings.breakMinutes]); // MINIMAL dependencies
+  }, [isBreak, isActive, initialSeconds, pomodoroCompleted, focusCount, focusSettings.breakMinutes, completedFullCycle]);
   
   // Reset focus and growth XP when returning from break (only after 4th Pomodoro)
-  useEffect(() => {
-    // This effect specifically handles the transition from break to focus mode
-    if (!isBreak && pomodoroCompleted) {
-      console.log('Returned from break after completing a Pomodoro');
-      
-      // If this was the 4th Pomodoro, reset the counters
-      if (focusCount === 4 || completedFullCycle) {
-        console.log('RESET: This was the 4th Pomodoro or completed full cycle. Resetting counters...');
-        setFocusCount(0);
-        setGrowthXP(0);
-        setCompletedFullCycle(false); // NEW: Reset the full cycle flag
-      }
-      
-      setPomodoroCompleted(false);
+// Reset focus and growth XP when returning from break (only after 4th Pomodoro)
+useEffect(() => {
+  // When starting a completely new session (not just returning from break)
+  if (!isBreak && focusCount === 0 && timeLeft === initialSeconds && !completedFullCycle) {
+    console.log('New session detected - clearing session states');
+    
+    // Clear the cycle conversion flag for a truly new session
+    const today = new Date().toLocaleDateString('en-CA');
+    const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+    
+    if (statsLocal[today]?.cycleConvertedToday) {
+      delete statsLocal[today].cycleConvertedToday;
+      localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
+      console.log('Cycle conversion flag cleared for new session');
     }
-  }, [isBreak, pomodoroCompleted, focusCount, completedFullCycle]);
+    
+    // Reset session-specific states
+    setGrowthXP(0);
+    setCompletedFullCycle(false);
+    setPomodoroCompleted(false);
+    setShowSuccessMessage(false);
+    
+    console.log('Session states reset for new session');
+  }
+  
+  // ADDITIONAL: When starting new cycle after completion, ensure focus count shows correctly
+  if (!isBreak && focusCount === 0 && !completedFullCycle && timeLeft < initialSeconds) {
+    console.log('New cycle starting - ensuring display shows 1/4 when first pomodoro begins');
+  }
+}, [isBreak, focusCount, timeLeft, initialSeconds, completedFullCycle]);
+
   
   // FIXED: Track document visibility - modified to handle automatic resume
   useEffect(() => {
@@ -1051,32 +1236,38 @@ if (prevTime <= 1) {
   }, [isSessionActive]);
   
   // NEW: Enhanced pause penalty system - continuous penalties for excessive pausing
-  useEffect(() => {
-    console.log(`Pause penalty check: totalPauseTime=${totalPauseTime}, pauseLimit=${pauseLimit}, hasExceededPauseLimit=${hasExceededPauseLimit}, pausePenaltiesApplied=${pausePenaltiesApplied}`);
+useEffect(() => {
+  // Check if we've exceeded the 5-minute limit for the first time
+  if (totalPauseTime > pauseLimit && !hasExceededPauseLimit) {
+    console.log('FIRST TIME exceeding pause limit - recording as wilted plant');
     
-    // Check if we've exceeded the 5-minute limit for the first time
-    if (totalPauseTime > pauseLimit && !hasExceededPauseLimit) {
-      console.log('FIRST TIME exceeding pause limit - applying initial -3 Garden XP penalty');
-      
-      setHasExceededPauseLimit(true);
-      setPausePenaltiesApplied(1);
-      setSessionFailed(true);
-      
-      // Apply -3 Garden XP penalty
-      deductGardenXP(3);
-      
-      // Show wither message
-      const witherMsg = generateWitherMessage(
-        focusSettings.selectedPlant || 'carrot',
-        'excessive_pausing'
-      );
-      setSuccessMessage(witherMsg);
-      setShowSuccessMessage(true);
-      
-      playSound('error');
-      alert("Your harvest is wilting due to excessive pauses! (-3 Garden XP)");
-    }
-  }, [totalPauseTime, pauseLimit, hasExceededPauseLimit, pausePenaltiesApplied, deductGardenXP, generateWitherMessage, focusSettings.selectedPlant, playSound]);
+    // Record as wilted plant due to excessive pausing
+    const plantType = focusSettings.selectedPlant || 'carrot';
+    const effectiveFocusTime = elapsedTime - totalPauseTime;
+    recordHarvestFromFocus(plantType, false, effectiveFocusTime); // false = wilted
+    console.log(`Recorded wilt for ${plantType} due to excessive pausing`);
+    
+    setHasExceededPauseLimit(true);
+    setPausePenaltiesApplied(1);
+    setSessionFailed(true);
+    
+    // Apply -3 Garden XP penalty
+    deductGardenXP(3);
+    
+    // Show wither message
+    const witherMsg = generateWitherMessage(
+      focusSettings.selectedPlant || 'carrot',
+      'excessive_pausing'
+    );
+    setSuccessMessage(witherMsg);
+    setShowSuccessMessage(true);
+    
+    playSound('error');
+    alert("Your harvest is wilting due to excessive pauses! (-3 Garden XP)");
+  }
+}, [totalPauseTime, pauseLimit, hasExceededPauseLimit, pausePenaltiesApplied, deductGardenXP, generateWitherMessage, focusSettings.selectedPlant, playSound, elapsedTime]);
+
+
   
   // Calculate projected finish time
   const calculateFinishTime = () => {
@@ -1340,17 +1531,21 @@ const autoSaveSessionData = () => {
   const userChosenFocusTimePerPomo = (focusSettings.focusHours * 3600) + (focusSettings.focusMinutes * 60);
   const totalUserFocusTime = userChosenFocusTimePerPomo * 4; // 4 Pomodoros
   
-  console.log('Auto-saving total focus time:', totalUserFocusTime, 'seconds (', Math.floor(totalUserFocusTime / 60), 'minutes)');
+  console.log('Auto-saving total focus time:', totalUserFocusTime, 'seconds');
   
   const today = new Date().toLocaleDateString('en-CA');
   
+  // Determine if session was successful
+  const isSuccessful = !sessionFailed && !excessiveBreaks;
+  console.log('Session successful:', isSuccessful);
+  
+  // RECORD HARVEST/WILT IN NEW SYSTEM
+  const plantType = focusSettings.selectedPlant || 'carrot';
+  recordHarvestFromFocus(plantType, isSuccessful, totalUserFocusTime);
+  console.log(`Recorded ${isSuccessful ? 'harvest' : 'wilt'} for ${plantType}`);
+  
   // Read current localStorage value
   const currentStats = JSON.parse(localStorage.getItem('pomoStats') || '{}');
-  const currentTotalForToday = currentStats[today]?.totalFocusTime || 0;
-  
-  // Calculate new total
-  const newTotal = currentTotalForToday + totalUserFocusTime;
-  console.log('Auto-save: Adding', totalUserFocusTime, 'to current', currentTotalForToday, '= new total:', newTotal);
   
   // Ensure today's entry exists
   if (!currentStats[today]) {
@@ -1365,11 +1560,40 @@ const autoSaveSessionData = () => {
     };
   }
   
-  // Save the new total
-  currentStats[today].totalFocusTime = newTotal;
+  // ONLY add data if successful
+if (isSuccessful) {
   currentStats[today].completed = (currentStats[today].completed || 0) + 4;
+  currentStats[today].totalFocusTime = (currentStats[today].totalFocusTime || 0) + totalUserFocusTime;
   currentStats[today].growthXP = (currentStats[today].growthXP || 0) + 4;
+  // ONLY add Harvest XP when a FULL 4/4 cycle is completed successfully
   currentStats[today].harvestXP = (currentStats[today].harvestXP || 0) + 1;
+  
+  console.log('Added to localStorage:', {
+    completed: 4,
+    totalFocusTime: totalUserFocusTime,
+    growthXP: 4,
+    harvestXP: 1
+  });
+}
+
+// Save to localStorage
+localStorage.setItem('pomoStats', JSON.stringify(currentStats));
+console.log('✅ AUTO-SAVED SESSION DATA');
+
+// FORCE IMMEDIATE DISPLAY UPDATE
+if (isSuccessful) {
+  console.log('Forcing immediate display update after successful 4/4 completion');
+  // Dispatch immediately with no delay
+  window.dispatchEvent(new CustomEvent('forceXPRecalculation', { 
+    detail: { harvestXP: currentStats[today].harvestXP } 
+  }));
+}
+
+  
+  
+  else {
+    console.log('Session failed, not adding any positive XP');
+  }
   
   // Save to localStorage
   localStorage.setItem('pomoStats', JSON.stringify(currentStats));
@@ -1379,13 +1603,18 @@ const autoSaveSessionData = () => {
   const sessionSummary = {
     focusTime: totalUserFocusTime,
     pauseTime: totalPauseTime || 0,
-    isSuccessful: true,
+    isSuccessful: isSuccessful,
     plantType: focusSettings.selectedPlant || 'carrot',
     completedAt: new Date().toISOString(),
     pomodoroCount: 4,
     isFullCycle: true
   };
   localStorage.setItem('lastSession', JSON.stringify(sessionSummary));
+
+  if (isSuccessful) {
+  window.dispatchEvent(new CustomEvent('leaderboardUpdate'));
+  console.log('Leaderboard update event dispatched');
+}
   
   // Trigger dashboard refresh
   if (window.refreshDashboardStats) {
@@ -1422,7 +1651,7 @@ useEffect(() => {
     
     return () => clearTimeout(autoSaveTimer);
   }
-}, [completedFullCycle, isBreak, focusSettings.focusHours, focusSettings.focusMinutes, focusSettings.selectedPlant, totalPauseTime]);
+}, [completedFullCycle, isBreak]);
 
 // UPDATE your handleCompleteCycle function to this simplified version:
 
@@ -1437,20 +1666,33 @@ const handleCompleteCycle = () => {
 // UPDATE the "Start a New Pomo" button function (if you have one) or add this:
 
 const handleStartNewPomo = () => {
-  console.log('Start New Pomo clicked - data already auto-saved, resetting for new cycle');
+  console.log('Start New Pomo clicked - resetting for new cycle WITHOUT adding XP');
   
   // Data was already saved by autoSaveSessionData when 4/4 completed
-  // Reset for new cycle
+  // Reset for new cycle WITHOUT adding any XP
   setCompletedFullCycle(false);
-  setFocusCount(0);
-  setGrowthXP(0);
+  setFocusCount(0); // Reset to 0 for new cycle
+  setGrowthXP(0); // Reset to 0 for new cycle
   setTimeLeft(initialSeconds);
   setIsBreak(false);
   setIsActive(true);
   setShowSuccessMessage(false);
+  setPomodoroCompleted(false);
+  
+  // Clear any session flags
+  const today = new Date().toLocaleDateString('en-CA');
+  const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+  if (statsLocal[today]?.cycleConvertedToday) {
+    delete statsLocal[today].cycleConvertedToday;
+    localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
+  }
+  
+  // DO NOT add any XP here - it was already added when the cycle completed
+  console.log('New Pomodoro cycle started - Focus count and Growth XP reset to 0');
   
   playSound('start');
 };
+
   
   // FIXED: Cancel quit dialog and resume timers - DON'T change timer states
   const cancelQuit = () => {
@@ -1654,31 +1896,74 @@ const handleStartNewPomo = () => {
   };
   
   // UPDATED: Confirm quit and navigate to intended destination with -10 Garden XP penalty
-  const confirmQuit = () => {
-    // DEDUCT Garden XP when quitting (ensures -10 Garden XP deduction)
-    deductGardenXP(10);
-    
-    const witherMsg = generateWitherMessage(
-      focusSettings.selectedPlant || 'carrot',
-      'quit'
-    );
-    
-    // Set wither message
-    setSuccessMessage(witherMsg);
-    setShowSuccessMessage(true);
-    
-    // Count this as a failed session
-    setSessionFailed(true);
-    
-    const effectiveFocusTime = elapsedTime - totalPauseTime;
-    if (effectiveFocusTime >= 300) {
-      completeSession();
-    }
-    
-    // Navigate to intended destination or default to dashboard
-    const destination = intendedDestination || '/dashboard';
-    navigate(destination);
-  };
+    const confirmQuit = () => {
+      console.log('User confirmed quit - applying EXACTLY -10 Garden XP penalty');
+      
+      // Record the wilted plant in harvest history
+      const plantType = focusSettings.selectedPlant || 'carrot';
+      const effectiveFocusTime = elapsedTime - totalPauseTime;
+      
+      // Add wilted plant to harvest history
+      const harvestHistory = JSON.parse(localStorage.getItem('harvestHistory') || '[]');
+      const wiltedPlant = {
+        id: Date.now() + Math.random(),
+        plantType: plantType,
+        status: 'wilted',
+        focusTime: effectiveFocusTime,
+        date: new Date().toISOString()
+      };
+      harvestHistory.unshift(wiltedPlant);
+      localStorage.setItem('harvestHistory', JSON.stringify(harvestHistory));
+      
+      console.log('Recorded wilted plant:', wiltedPlant);
+      
+      // ONLY deduct exactly 10 Garden XP - NO other deductions
+      const today = new Date().toISOString().split('T')[0];
+      const statsLocal = JSON.parse(localStorage.getItem('pomoStats') || '{}');
+      
+      if (!statsLocal[today]) {
+        statsLocal[today] = {
+          completed: 0,
+          totalFocusTime: 0,
+          failed: 0,
+          growthXP: 0,
+          harvestXP: 0,
+          witherCount: 0
+        };
+      }
+      
+      // Add exactly 10 to wither count (this deducts 10 Garden XP)
+      const previousWither = statsLocal[today].witherCount || 0;
+      statsLocal[today].witherCount = previousWither + 10;
+      localStorage.setItem('pomoStats', JSON.stringify(statsLocal));
+      
+      console.log(`Added exactly 10 to wither count. Total wither count now: ${statsLocal[today].witherCount}`);
+      
+      // Update local state to trigger recalculation
+      setWitherCount(prev => prev + 10);
+      
+      // Generate quit message
+      const witherMsg = generateWitherMessage(
+        focusSettings.selectedPlant || 'carrot',
+        'quit'
+      );
+      
+      // Set wither message
+      setSuccessMessage(witherMsg);
+      setShowSuccessMessage(true);
+      
+      // Count this as a failed session
+      setSessionFailed(true);
+      
+      // Force immediate recalculation of progress bar
+      setTimeout(() => {
+        setWitherCount(current => current + 0); // Trigger recalculation
+      }, 100);
+      
+      // Navigate to intended destination or default to dashboard
+      const destination = intendedDestination || '/dashboard';
+      navigate(destination);
+    };
   
   return (
     <Layout>
@@ -2107,17 +2392,25 @@ const handleStartNewPomo = () => {
                 </div>
               </div>
             </div>
+
+
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2 relative border border-gray-300 dark:border-gray-600">
               <div 
                 className="bg-purple-500 h-4 rounded-full transition-all duration-500 ease-out" 
-                style={{ width: `${xpPercentage}%` }}
+                style={{ 
+                  width: `${xpPercentage}%`,
+                  // FIXED: Force immediate visual update with key prop
+                  key: `progress-${harvestXP}-${witherCount}-${xpPercentage}`
+                }}
               ></div>
               <div className="absolute left-0 top-0 h-full flex items-center px-3">
-                <span className="xp-bar-text text-xs font-semibold drop-shadow-md">
-                  Current: {Math.max(0, harvestXP * 10 - witherCount)} XP
+                <span className="text-xs font-semibold text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
+                  Current: {currentDisplayXP} XP
                 </span>
               </div>
             </div>
+
+
             <div className="flex justify-between text-xs mt-1 text-gray-700 dark:text-gray-300">
               <span>Level {gardenerLevel}</span>
               <span>Next: Level {gardenerLevel + 1} ({xpToNextLevel} Garden XP)</span>
@@ -2237,62 +2530,7 @@ const handleStartNewPomo = () => {
                     </div>
                   </div>
 
-                  {/* Level Progression */}
-                  <div className="bg-blue-100 dark:bg-blue-900/30 p-6 rounded-xl border border-blue-300 dark:border-blue-700">
-                    <h2 className="text-xl font-bold mb-4 text-blue-800 dark:text-blue-200">📈 Gardener Level Progression</h2>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-blue-300 dark:border-blue-800">
-                            <th className="py-3 px-4 text-left font-bold text-gray-700 dark:text-gray-300">Level</th>
-                            <th className="py-3 px-4 text-left font-bold text-gray-700 dark:text-gray-300">Garden XP Needed</th>
-                            <th className="py-3 px-4 text-left font-bold text-gray-700 dark:text-gray-300">XP Gap</th>
-                            <th className="py-3 px-4 text-left font-bold text-gray-700 dark:text-gray-300">Harvest XP Equivalent</th>
-                          </tr>
-                        </thead>
-                        <tbody className="space-y-2">
-                          <tr className="border-b border-blue-200 dark:border-blue-900">
-                            <td className="py-2 px-4 text-gray-700 dark:text-gray-300">1</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">0</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">-</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">0</td>
-                          </tr>
-                          <tr className="border-b border-blue-200 dark:border-blue-900">
-                            <td className="py-2 px-4 text-gray-700 dark:text-gray-300">2</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">10</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">+10</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">1</td>
-                          </tr>
-                          <tr className="border-b border-blue-200 dark:border-blue-900">
-                            <td className="py-2 px-4 text-gray-700 dark:text-gray-300">3</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">25</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">+15</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">2.5</td>
-                          </tr>
-                          <tr className="border-b border-blue-200 dark:border-blue-900">
-                            <td className="py-2 px-4 text-gray-700 dark:text-gray-300">4</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">45</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">+20</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">4.5</td>
-                          </tr>
-                          <tr className="border-b border-blue-200 dark:border-blue-900">
-                            <td className="py-2 px-4 text-gray-700 dark:text-gray-300">5</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">70</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">+25</td><td className="py-2 px-4 text-gray-700 dark:text-gray-300">7</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
 
-                  {/* Tips Section */}
-                  <div className="bg-yellow-100 dark:bg-yellow-900/30 p-6 rounded-xl border border-yellow-300 dark:border-yellow-700">
-                    <h2 className="text-xl font-bold mb-4 text-yellow-800 dark:text-yellow-200">💡 Pro Tips</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-bold text-yellow-800 dark:text-yellow-300 mb-2">Maximize Growth</h4>
-                        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                          <li>• Complete full 4-Pomodoro cycles for maximum XP</li>
-                          <li>• Avoid taking breaks until absolutely necessary</li>
-                          <li>• Keep pause times under 5 minutes total</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-yellow-800 dark:text-yellow-300 mb-2">Avoid Penalties</h4>
-                        <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                          <li>• Plan your sessions to avoid interruptions</li>
-                          <li>• Use break time wisely - it's for true rest</li>
-                          <li>• Commit to completing started sessions</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="text-center pt-4">
                     <p className="text-lg italic text-gray-600 dark:text-gray-400">
@@ -2411,12 +2649,11 @@ const handleStartNewPomo = () => {
                 {/* NEW: Congratulation message for completed full cycle */}
                 {completedFullCycle && (
                   <div className="text-center mb-6 p-6 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-300 dark:border-green-700">
-                    <div className="text-4xl mb-3">🎉</div>
                     <h2 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">
                       Congratulations! Full Cycle Complete!
                     </h2>
                     <p className="text-green-700 dark:text-green-300 mb-3">
-                      You've successfully completed a full 4/4 Pomodoro cycle! Amazing focus and dedication! 🌟
+                      You've successfully completed a full 4/4 Pomodoro cycle!
                     </p>
                     <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                       +1 Harvest XP • +10 Garden XP 🌿
@@ -2425,47 +2662,43 @@ const handleStartNewPomo = () => {
                 )}
                 
                 <div className="flex justify-center space-x-4 focus-controls">
-                  <button
-                    onClick={() => {
-                      console.log('Start New Pomo / Return to Focus button clicked');
-                      
-                      // First clear any existing timer
-                      if (timer.current) {
-                        console.log('Clearing existing timer before returning to focus');
-                        clearInterval(timer.current);
-                        timer.current = null;
-                      }
-                      
-                      // Then update states
-                      setIsBreak(false);
-                      
-                      // If this was a completed full cycle, reset everything for a new cycle
-                      if (completedFullCycle) {
-                        console.log('Starting a new Pomodoro cycle after full completion');
-                        setTimeLeft(initialSeconds);
-                        setCompletedFullCycle(false);
-                        // Reset counters will happen in the effect below
-                      } else if (pomodoroCompleted) {
-                        console.log('Resetting timer to initial seconds due to completed pomodoro');
-                        setTimeLeft(initialSeconds);
-                      }
-                      
-                      // Hide success message when returning to focus
-                      setShowSuccessMessage(false);
-                      // Clear manual break message
-                      setManualBreakMessage('');
-                      
-                      // Play sound
-                      playSound('start');
-                      
-                      // Set active last to trigger the focus timer effect
-                      console.log('Setting active=true to start focus timer');
-                      setIsActive(true);
-                    }}
-                    className="return-focus-button btn-secondary px-6 py-2"
-                  >
-                    {completedFullCycle ? 'Start a New Pomo' : 'Return to Focus'}
-                  </button>
+
+              <button
+                onClick={completedFullCycle ? handleStartNewPomo : () => {
+                  console.log('Return to Focus button clicked');
+                  
+                  // First clear any existing timer
+                  if (timer.current) {
+                    console.log('Clearing existing timer before returning to focus');
+                    clearInterval(timer.current);
+                    timer.current = null;
+                  }
+                  
+                  // Then update states
+                  setIsBreak(false);
+                  
+                  if (pomodoroCompleted) {
+                    console.log('Resetting timer to initial seconds due to completed pomodoro');
+                    setTimeLeft(initialSeconds);
+                  }
+                  
+                  // Hide success message when returning to focus
+                  setShowSuccessMessage(false);
+                  // Clear manual break message
+                  setManualBreakMessage('');
+                  
+                  // Play sound
+                  playSound('start');
+                  
+                  // Set active last to trigger the focus timer effect
+                  console.log('Setting active=true to start focus timer');
+                  setIsActive(true);
+                }}
+                className="return-focus-button btn-secondary px-6 py-2"
+              >
+                {completedFullCycle ? 'Start a New Pomo' : 'Return to Focus'}
+              </button>
+
                   
                   {/* NEW: Complete button - only show when full cycle is completed */}
                   {completedFullCycle && (

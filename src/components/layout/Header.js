@@ -22,7 +22,7 @@ const Header = () => {
     ? [
         { name: 'Dashboard', path: '/dashboard' },
         { name: 'Garden', path: '/garden' },
-        { name: 'Stats', path: '/stats' }
+        { name: 'Leaderboard', path: '/leaderboard' } // CHANGED: Stats → Leaderboard
       ]
     : [
         { name: 'Home', path: '/' }

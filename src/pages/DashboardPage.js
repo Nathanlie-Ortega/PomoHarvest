@@ -287,13 +287,17 @@ const DashboardPage = () => {
           
           <div className="card p-6">
             <h3 className="text-lg font-display font-medium mb-1 text-gray-700 dark:text-gray-300">Current Streak</h3>
-            <p className="text-3xl font-bold text-primary-500">{currentStreak} days</p>
+            <p className="text-3xl font-bold text-primary-500">
+              {currentStreak} {currentStreak === 1 ? 'day' : 'days'}
+            </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {currentStreak === 0 ? 'Start your streak today!' : 
                currentStreak === 1 ? 'Keep it going!' : 
-               'Amazing consistency! 🔥'}
+               'Amazing consistency! '}
             </p>
           </div>
+
+
         </div>
       </div>
       

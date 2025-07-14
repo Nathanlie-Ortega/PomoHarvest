@@ -1,7 +1,6 @@
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import Garden from '../components/garden/Garden';
-import GardenStats from '../components/garden/GardenStats';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -16,10 +15,9 @@ const GardenPage = () => {
   return (
     <Layout>
       <div className="py-6 container mx-auto px-4">
-        <h1 className="text-3xl font-display font-bold mb-6">Your Garden</h1>
+        <h1 className="text-3xl font-display font-bold mb-6">Your Garden & Stats</h1>
         
         <Garden />
-        <GardenStats />
       </div>
     </Layout>
   );

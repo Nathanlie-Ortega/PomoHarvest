@@ -41,7 +41,8 @@ const FocusSetupModal = ({ onClose }) => {
   const plantTypes = [
     { name: "🥕 Carrot", value: "carrot" },
     { name: "🍅 Tomato", value: "tomato" },
-    { name: "🌾 Wheat", value: "wheat" }
+    { name: "🌾 Wheat", value: "wheat" },
+    { name: "🌽 Corn", value: "corn" }
   ];
   
   // Function to close all dropdowns
