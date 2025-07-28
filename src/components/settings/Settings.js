@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import ProfileSettings from './ProfileSettings';
-import TimerSettings from './TimerSettings';
 import NotificationSettings from './NotificationSettings';
 
 const Settings = () => {
@@ -8,7 +7,6 @@ const Settings = () => {
   
   const tabs = [
     { id: 'profile', name: 'Profile', component: ProfileSettings },
-    { id: 'timer', name: 'Timer', component: TimerSettings },
     { id: 'notifications', name: 'Notifications', component: NotificationSettings }
   ];
   

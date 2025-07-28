@@ -3,43 +3,22 @@ import React, { createContext, useState, useEffect } from 'react';
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(() => {
-    try {
-      // Check localStorage first
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) {
-        return savedTheme === 'dark';
-      }
-      // If no saved preference, check system preference
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } catch (error) {
-      console.error('Error reading theme preference from localStorage:', error);
-      return false;
-    }
-  });
+  // CHANGED: Default to dark mode always (except Focus Page which handles its own theme)
+  const [darkMode, setDarkMode] = useState(true);
   
   useEffect(() => {
-    try {
-      // Save preference to localStorage
-      localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-      
-      // Apply theme to document
-      if (darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } catch (error) {
-      console.error('Error saving theme preference to localStorage:', error);
-    }
-  }, [darkMode]);
+    // CHANGED: Always apply dark mode globally
+    document.documentElement.classList.add('dark');
+  }, []);
   
   const toggleTheme = () => {
-    setDarkMode(prev => !prev);
+    // CHANGED: Theme toggle is now handled by Focus Page only
+    // This function is kept for compatibility but doesn't change global theme
+    console.log('Global theme toggle disabled - Focus Page handles its own theme');
   };
   
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ darkMode: true, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

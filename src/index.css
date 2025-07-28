@@ -6,12 +6,13 @@
 
 @layer base {
   body {
-    @apply text-gray-900 dark:bg-gray-900 dark:text-white transition-colors duration-200;
-    background-color: rgb(218, 219, 167); /* Updated to lightish yellow/darkish yellow theme */
+    background-color: #1a1a1a !important;
+    color: white !important;
   }
   
   .dark body {
-    background-color: #1a1a1a; /* Dark mode background */
+    background-color: #1a1a1a !important;
+    color: white !important;
   }
 }
 
@@ -32,18 +33,22 @@
     @apply btn border-2 border-gray-400 hover:border-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-400 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-md hover:shadow-lg;
   }
   
-  .card {
-    @apply rounded-xl shadow-lg backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200;
-    background-color: rgba(218, 219, 167, 0.9); /* Updated to lightish yellow theme */
-  }
-  
-  .dark .card {
-    @apply bg-gray-800/90;
-  }
+.card {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  color: white !important;
+  @apply rounded-xl shadow-lg backdrop-blur-sm overflow-hidden transition-all duration-200;
+}
+
+.dark .card {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  color: white !important;
+}
   
   .input {
     @apply w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white transition-all duration-300 shadow-sm;
-    background-color: rgba(218, 219, 167, 0.9); /* Updated to lightish yellow theme */
+    background-color: #1a1a1a; /* Updated to lightish yellow theme */
   }
   
   .dark .input {
@@ -157,15 +162,72 @@
     color: #e5e7eb;
   }
 
-  /* Header/Footer Background for Light Mode */
-  .header-footer-bg {
-    background-color: rgba(143, 213, 227, 0.95); /* Light blue for headers/footers */
-  }
 
-  .dark .header-footer-bg {
-    background-color: rgba(31, 41, 55, 0.95);
-  }
+/* Force dark styling for header/footer elements in BOTH light and dark mode */
+.header-footer-bg {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+  color: white !important;
 }
+
+/* Make ALL header/footer text white by default - BOTH modes */
+.header-footer-bg *,
+.header-footer-bg h1,
+.header-footer-bg h2,
+.header-footer-bg h3,
+.header-footer-bg p,
+.header-footer-bg span,
+.header-footer-bg div {
+  color: #22c55e !important;
+}
+
+/* EXCEPTION: Keep PomoHarvest logo GREEN in BOTH modes */
+.header-footer-bg .text-green-600,
+.header-footer-bg .text-green-500,
+.header-footer-bg .text-green-700,
+.header-footer-bg span.text-green-600,
+.header-footer-bg h1.text-green-600 {
+  color: #22c55e !important; /* Bright green for both modes */
+}
+
+/* Navigation links styling - BOTH modes */
+.header-footer-bg a:not([href="/"]),
+.header-footer-bg nav a:not([href="/"]) {
+  color: #e5e7eb !important;
+}
+
+.header-footer-bg a:not([href="/"]):hover,
+.header-footer-bg nav a:not([href="/"]):hover {
+  color: white !important;
+}
+
+/* Buttons styling - BOTH modes */
+.header-footer-bg button {
+  background: rgba(55, 65, 81, 0.9) !important;
+  border: 2px solid rgba(156, 163, 175, 0.4) !important;
+  color: white !important;
+}
+
+.header-footer-bg button:hover {
+  background: rgba(55, 65, 81, 1) !important;
+  border-color: rgba(156, 163, 175, 0.7) !important;
+  color: white !important;
+}
+
+.header-footer-bg .farm-button {
+  background: rgba(55, 65, 81, 0.9) !important;
+  border: 2px solid rgba(156, 163, 175, 0.4) !important;
+  color: white !important;
+}
+
+.header-footer-bg .farm-button:hover {
+  background: rgba(55, 65, 81, 1) !important;
+  border-color: rgba(156, 163, 175, 0.7) !important;
+  color: white !important;
+}
+
+}
+
+
 
 /* Farm Background Animations */
 .farm-background {
@@ -1081,110 +1143,7 @@
   );
 }
 
-/* ENHANCED NIGHT MODE HEADLIGHTS AND WORK LIGHTS */
-.headlights {
-  position: absolute;
-  z-index: 15;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
 
-/* Show headlights only in night mode */
-body.night-mode .headlights {
-  opacity: 1;
-}
-
-/* Main Headlights - Enhanced brightness */
-.headlight-main {
-  position: absolute;
-  width: 10px;
-  height: 8px;
-  background: radial-gradient(circle, #fff 20%, #ffeb3b 60%, #ffc107 80%, transparent 100%);
-  border-radius: 50%;
-  left: -10px;
-  top: 23px;
-  box-shadow: 
-    0 0 20px #ffeb3b,
-    0 0 35px rgba(255, 235, 59, 0.4),
-    0 0 50px rgba(255, 235, 59, 0.2);
-}
-
-.headlight-main::after {
-  content: '';
-  position: absolute;
-  width: 60px;
-  height: 16px;
-  background: linear-gradient(90deg, 
-    rgba(255, 235, 59, 0.6) 0%, 
-    rgba(255, 235, 59, 0.4) 30%,
-    rgba(255, 235, 59, 0.2) 60%,
-    transparent 100%);
-  left: 0;
-  top: -4px;
-  border-radius: 50%;
-}
-
-/* Work Lights on Top - Enhanced */
-.work-lights {
-  position: absolute;
-  left: 30%;
-  top: -8px;
-  width: 40%;
-  height: 12px;
-}
-
-.work-light {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: radial-gradient(circle, #fff 30%, #ffeb3b 70%, #ffc107 90%, transparent 100%);
-  border-radius: 50%;
-  box-shadow: 
-    0 0 12px #ffeb3b,
-    0 0 20px rgba(255, 235, 59, 0.3);
-}
-
-.work-light:nth-child(1) { left: 0; }
-.work-light:nth-child(2) { left: 10px; }
-.work-light:nth-child(3) { left: 20px; }
-.work-light:nth-child(4) { left: 30px; }
-
-.work-light::after {
-  content: '';
-  position: absolute;
-  width: 35px;
-  height: 12px;
-  background: linear-gradient(90deg, 
-    rgba(255, 235, 59, 0.3) 0%, 
-    rgba(255, 235, 59, 0.2) 40%,
-    transparent 100%);
-  left: 0;
-  top: -3px;
-  border-radius: 50%;
-}
-
-/* Enhanced Ground Light Reflections */
-.ground-reflection {
-  position: absolute;
-  bottom: -18px;
-  left: -15px;
-  width: 80px;
-  height: 12px;
-  background: radial-gradient(ellipse, 
-    rgba(255, 235, 59, 0.4) 0%, 
-    rgba(255, 235, 59, 0.3) 30%, 
-    rgba(255, 235, 59, 0.2) 60%,
-    rgba(255, 235, 59, 0.1) 80%,
-    transparent 100%);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  animation: groundGlow 3s ease-in-out infinite alternate;
-}
-
-body.night-mode .ground-reflection {
-  opacity: 1;
-}
 
 @keyframes groundGlow {
   0% { 
@@ -1954,16 +1913,15 @@ body.night-mode .ground-reflection {
 
 
 .card {
-  @apply rounded-xl shadow-lg backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200;
-  /* ENHANCED: Glass effect with light RGB(188,210,208) */
-  background: rgba(188, 210, 208, 0.85);
+  @apply rounded-xl shadow-lg backdrop-blur-sm border-2 border-gray-700 overflow-hidden transition-all duration-200;
+  /* CHANGED: Default to dark theme */
+  background: rgba(31, 41, 55, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 2px solid rgba(34, 197, 94, 0.25);
+  border: 2px solid rgba(156, 163, 175, 0.3);
   box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.1),
-    0 6px 20px rgba(0, 0, 0, 0.06),
-    
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .card:hover {
@@ -2021,5 +1979,4 @@ body.night-mode .ground-reflection {
   background: rgba(31, 41, 55, 0.95) !important;
   border: 2px solid rgba(156, 163, 175, 0.3) !important;
 }
-
 

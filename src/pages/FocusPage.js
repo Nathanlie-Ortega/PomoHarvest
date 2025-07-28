@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import TodoList from '../components/todo/TodoList';
+import ThemeToggle from '../components/layout/ThemeToggle';
 import { recordHarvestFromFocus } from '../utils/statsSync';
 import { useAuth } from '../hooks/useAuth';
 import { useSound } from '../hooks/useSound';
@@ -784,6 +785,7 @@ const saveSessionData = (pomodoroCount, totalElapsed, isFullCycle = false) => {
     setFocusQuote(getRandomQuote(focusQuotes));
     setInspirationalQuote(getRandomQuote(inspirationalQuotes));
   }, [getRandomQuote]);
+  
   
   // COMPLETELY ISOLATED: Focus quote rotation - NO interaction with main timer
   useEffect(() => {
@@ -1982,39 +1984,39 @@ const handleStartNewPomo = () => {
           ))}
         </div>
         
-        {/* UPDATED: Flying Birds with Wing Flapping - Both Directions (Light Mode Only) */}
-        <div className="dark:hidden block absolute inset-0 birds-container">
-          {/* RIGHT-FLYING BIRDS (Left to Right) */}
-          <div className="bird-container bird-container-one">
-            <div className="bird bird-one"></div>
-          </div>
-          <div className="bird-container bird-container-two">
-            <div className="bird bird-two"></div>
-          </div>
-          <div className="bird-container bird-container-three">
-            <div className="bird bird-three"></div>
-          </div>
-          <div className="bird-container bird-container-four">
-            <div className="bird bird-four"></div>
-          </div>
-          <div className="bird-container bird-container-five">
-            <div className="bird bird-five"></div>
-          </div>
-          
-          {/* NEW: LEFT-FLYING BIRDS (Right to Left) */}
-          <div className="bird-container-left bird-container-left-one">
-            <div className="bird bird-left-one"></div>
-          </div>
-          <div className="bird-container-left bird-container-left-two">
-            <div className="bird bird-left-two"></div>
-          </div>
-          <div className="bird-container-left bird-container-left-three">
-            <div className="bird bird-left-three"></div>
-          </div>
-          <div className="bird-container-left bird-container-left-four">
-            <div className="bird bird-left-four"></div>
-          </div>
-        </div>
+{/* Flying Birds with Wing Flapping - Both Directions (Now for Dark Mode) */}
+<div className="absolute inset-0 birds-container">
+  {/* RIGHT-FLYING BIRDS (Left to Right) */}
+  <div className="bird-container bird-container-one">
+    <div className="bird bird-one"></div>
+  </div>
+  <div className="bird-container bird-container-two">
+    <div className="bird bird-two"></div>
+  </div>
+  <div className="bird-container bird-container-three">
+    <div className="bird bird-three"></div>
+  </div>
+  <div className="bird-container bird-container-four">
+    <div className="bird bird-four"></div>
+  </div>
+  <div className="bird-container bird-container-five">
+    <div className="bird bird-five"></div>
+  </div>
+  
+  {/* LEFT-FLYING BIRDS (Right to Left) */}
+  <div className="bird-container-left bird-container-left-one">
+    <div className="bird bird-left-one"></div>
+  </div>
+  <div className="bird-container-left bird-container-left-two">
+    <div className="bird bird-left-two"></div>
+  </div>
+  <div className="bird-container-left bird-container-left-three">
+    <div className="bird bird-left-three"></div>
+  </div>
+  <div className="bird-container-left bird-container-left-four">
+    <div class="bird bird-left-four"></div>
+  </div>
+</div>
 
 
         
@@ -2362,17 +2364,26 @@ const handleStartNewPomo = () => {
           </div>
         </div>
         
+
+
+
+
+
         <div className="max-w-4xl mx-auto relative z-10">
-          {/* Current Plant Display */}
-          <div className="flex justify-center mb-4">
+          {/* CHANGED: Plant Display with Day/Night Toggle */}
+          <div className="flex justify-center items-center mb-4 space-x-4">
             <div className="farm-card px-6 py-3 rounded-full text-lg font-medium shadow-sm">
               <span className="mr-2 text-2xl">{getPlantEmoji(focusSettings.selectedPlant)}</span>
               Growing: {getPlantName(focusSettings.selectedPlant)}
             </div>
+            
+            {/* ADDED: Day/Night Toggle Button */}
+            <ThemeToggle isFocusPage={true} />
           </div>
-          
-          {/* UPDATED: Gardener Level Progress Bar - Changed to PURPLE color with black text */}
+
+          {/* UPDATED: Gardener Level Progress Bar - Keep existing code but ensure it uses proper theming */}
           <div className="mb-6 farm-card rounded-lg p-6 shadow-lg">
+            {/* Keep all existing XP bar code unchanged */}
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium text-gray-800 dark:text-gray-200 text-lg">
                 Garden XP
@@ -2393,13 +2404,11 @@ const handleStartNewPomo = () => {
               </div>
             </div>
 
-
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2 relative border border-gray-300 dark:border-gray-600">
               <div 
                 className="bg-purple-500 h-4 rounded-full transition-all duration-500 ease-out" 
                 style={{ 
                   width: `${xpPercentage}%`,
-                  // FIXED: Force immediate visual update with key prop
                   key: `progress-${harvestXP}-${witherCount}-${xpPercentage}`
                 }}
               ></div>
@@ -2410,12 +2419,22 @@ const handleStartNewPomo = () => {
               </div>
             </div>
 
-
             <div className="flex justify-between text-xs mt-1 text-gray-700 dark:text-gray-300">
               <span>Level {gardenerLevel}</span>
               <span>Next: Level {gardenerLevel + 1} ({xpToNextLevel} Garden XP)</span>
             </div>
           </div>
+
+
+
+
+
+
+
+
+
+
+
           
           {/* UPDATED Instructions Modal */}
           {showInstructions && (
@@ -2762,7 +2781,6 @@ const handleStartNewPomo = () => {
               <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Connect to Spotify</h3>
               <p className="mb-6 text-gray-600 dark:text-gray-400">
                 Connect your Spotify account to play music during your focus sessions. 
-                Your album artwork will blend beautifully with the farm background!
               </p>
               
               <div className="flex space-x-3">

@@ -14,6 +14,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import PasswordChangeHandler from './components/PasswordResetDetector';
 import FocusPage from './pages/FocusPage';
 
 function App() {

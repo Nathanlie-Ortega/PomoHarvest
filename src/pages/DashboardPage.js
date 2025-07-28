@@ -243,9 +243,9 @@ const DashboardPage = () => {
   return (
     <Layout>
       <div className="py-12 max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-display font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
-          Focus Dashboard
-        </h1>
+<h1 className="text-3xl md:text-4xl font-display font-bold mb-6 text-center text-white">
+  Focus Dashboard
+</h1>
         
         <div className="card p-8 md:p-12 text-center">
           <div className="mb-8">

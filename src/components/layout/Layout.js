@@ -5,11 +5,16 @@ import Footer from './Footer';
 const Layout = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      {/* CHANGED: Headers and footers always use dark theme */}
+      <div className="header-footer-bg">
+        <Header />
+      </div>
       <main className="flex-grow container mx-auto px-4 py-8">
         {children}
       </main>
-      <Footer />
+      <div className="header-footer-bg">
+        <Footer />
+      </div>
     </div>
   );
 };

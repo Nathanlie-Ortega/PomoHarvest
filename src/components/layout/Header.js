@@ -1,4 +1,3 @@
-// src/components/layout/Header.js
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,7 +21,7 @@ const Header = () => {
     ? [
         { name: 'Dashboard', path: '/dashboard' },
         { name: 'Garden', path: '/garden' },
-        { name: 'Leaderboard', path: '/leaderboard' } // CHANGED: Stats → Leaderboard
+        { name: 'Leaderboard', path: '/leaderboard' }
       ]
     : [
         { name: 'Home', path: '/' }
@@ -35,7 +34,7 @@ const Header = () => {
           {/* Logo - Navigate to dashboard if logged in, home otherwise */}
           <Link to={currentUser ? "/dashboard" : "/"} className="flex items-center space-x-2">
             <img src="/assets/images/logo.svg" alt="PomoHarvest" className="h-8 w-8" />
-            <span className="text-xl font-display font-bold text-primary-600 dark:text-primary-400">
+            <span className="text-xl font-display font-bold text-green-600 dark:text-green-400">
               PomoHarvest
             </span>
           </Link>
@@ -46,11 +45,24 @@ const Header = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-medium transition-colors ${
+                className={`text-sm font-medium transition-all duration-300 ${
                   isActive(link.path)
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-green-600 dark:text-green-400 hover:text-white hover:text-shadow-glow dark:hover:text-white'
                 }`}
+                style={{
+                  textShadow: isActive(link.path) ? 'none' : undefined
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(link.path)) {
+                    e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(link.path)) {
+                    e.target.style.textShadow = 'none';
+                  }
+                }}
               >
                 {link.name}
               </Link>
@@ -60,17 +72,33 @@ const Header = () => {
               <>
                 <Link 
                   to="/settings" 
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm font-medium transition-all duration-300 ${
                     isActive('/settings')
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-green-600 dark:text-green-400 hover:text-white'
                   }`}
+                  onMouseEnter={(e) => {
+                    if (!isActive('/settings')) {
+                      e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive('/settings')) {
+                      e.target.style.textShadow = 'none';
+                    }
+                  }}
                 >
                   Settings
                 </Link>
                 <button
                   onClick={logout}
-                  className="btn-outline text-sm"
+                  className="btn-outline text-sm hover:text-white transition-all duration-300"
+                  onMouseEnter={(e) => {
+                    e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.textShadow = 'none';
+                  }}
                 >
                   Log Out
                 </button>
@@ -89,7 +117,13 @@ const Header = () => {
             <ThemeToggle />
             <button
               onClick={toggleMenu}
-              className="ml-2 p-2 rounded-md text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className="ml-2 p-2 rounded-md text-green-600 hover:text-white dark:text-green-400 dark:hover:text-white transition-all duration-300"
+              onMouseEnter={(e) => {
+                e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.textShadow = 'none';
+              }}
             >
               {isMenuOpen ? (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,12 +146,22 @@ const Header = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-2 py-1 text-sm font-medium transition-colors ${
+                  className={`px-2 py-1 text-sm font-medium transition-all duration-300 ${
                     isActive(link.path)
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-600 dark:text-gray-300'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-green-600 dark:text-green-400 hover:text-white'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
+                  onMouseEnter={(e) => {
+                    if (!isActive(link.path)) {
+                      e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive(link.path)) {
+                      e.target.style.textShadow = 'none';
+                    }
+                  }}
                 >
                   {link.name}
                 </Link>
@@ -127,12 +171,22 @@ const Header = () => {
                 <>
                   <Link 
                     to="/settings" 
-                    className={`px-2 py-1 text-sm font-medium transition-colors ${
+                    className={`px-2 py-1 text-sm font-medium transition-all duration-300 ${
                       isActive('/settings')
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-300'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-green-600 dark:text-green-400 hover:text-white'
                     }`}
                     onClick={() => setIsMenuOpen(false)}
+                    onMouseEnter={(e) => {
+                      if (!isActive('/settings')) {
+                        e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive('/settings')) {
+                        e.target.style.textShadow = 'none';
+                      }
+                    }}
                   >
                     Settings
                   </Link>
@@ -141,7 +195,13 @@ const Header = () => {
                       logout();
                       setIsMenuOpen(false);
                     }}
-                    className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-300"
+                    className="px-2 py-1 text-sm font-medium text-green-600 dark:text-green-400 hover:text-white transition-all duration-300 text-left"
+                    onMouseEnter={(e) => {
+                      e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.textShadow = 'none';
+                    }}
                   >
                     Log Out
                   </button>
@@ -149,8 +209,14 @@ const Header = () => {
               ) : (
                 <Link 
                   to="/login" 
-                  className="px-2 py-1 text-sm font-medium text-primary-600 dark:text-primary-400"
+                  className="px-2 py-1 text-sm font-medium text-green-600 dark:text-green-400 hover:text-white transition-all duration-300"
                   onClick={() => setIsMenuOpen(false)}
+                  onMouseEnter={(e) => {
+                    e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.textShadow = 'none';
+                  }}
                 >
                   Log In
                 </Link>
