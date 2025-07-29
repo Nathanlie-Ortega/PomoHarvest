@@ -16,7 +16,6 @@ import NotFoundPage from './pages/NotFoundPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import PasswordChangeHandler from './components/PasswordResetDetector';
 import FocusPage from './pages/FocusPage';
-import SpotifyCallback from './pages/SpotifyCallback';
 
 
 function App() {
@@ -27,7 +26,6 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/callback" element={<SpotifyCallback />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/garden" element={<GardenPage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} /> {/* CHANGED: /stats → /leaderboard */}

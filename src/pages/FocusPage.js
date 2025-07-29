@@ -111,13 +111,7 @@ useEffect(() => {
   const [inspirationalQuote, setInspirationalQuote] = useState('');
   const [breakQuoteOpacity, setBreakQuoteOpacity] = useState(1); // NEW: Break quote opacity
   
-  // NEW: Spotify integration states
-  const [spotifyToken, setSpotifyToken] = useState(null);
-  const [currentTrack, setCurrentTrack] = useState(null);
-  const [isSpotifyPlaying, setIsSpotifyPlaying] = useState(false);
-  const [showSpotifyLogin, setShowSpotifyLogin] = useState(false);
-  const [spotifyPlayer, setSpotifyPlayer] = useState(null);
-  const [albumArtBackground, setAlbumArtBackground] = useState(null);
+
   
   // Refs
   const timer = useRef(null);
@@ -192,129 +186,7 @@ useEffect(() => {
     return plantType.charAt(0).toUpperCase() + plantType.slice(1);
   }, []);
 
-  // NEW: Spotify Integration Functions
-  const initializeSpotify = useCallback(() => {
-    if (!window.Spotify) {
-      const script = document.createElement('script');
-      script.src = 'https://sdk.scdn.co/spotify-player.js';
-      script.async = true;
-      document.body.appendChild(script);
-      
-      window.onSpotifyWebPlaybackSDKReady = () => {
-        if (spotifyToken) {
-          const player = new window.Spotify.Player({
-            name: 'PomoHarvest Focus Player',
-            getOAuthToken: cb => { cb(spotifyToken); },
-            volume: 0.5
-          });
 
-          setSpotifyPlayer(player);
-
-          player.addListener('ready', ({ device_id }) => {
-            console.log('Ready with Device ID', device_id);
-          });
-
-          player.addListener('player_state_changed', (state) => {
-            if (state) {
-              setCurrentTrack(state.track_window.current_track);
-              setIsSpotifyPlaying(!state.paused);
-              
-              // Set album art as background if available
-              if (state.track_window.current_track.album.images[0]) {
-                setAlbumArtBackground(state.track_window.current_track.album.images[0].url);
-              }
-            }
-          });
-
-          player.connect();
-        }
-      };
-    }
-  }, [spotifyToken]);
-
-const loginToSpotify = () => {
-  const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID || 'your_spotify_client_id';
-  
-  // Use the exact redirect URI that's registered in your Spotify app
-  const REDIRECT_URI = encodeURIComponent('https://pomo-harvest.vercel.app/callback');
-  
-  const scopes = [
-    'streaming',
-    'user-read-email',
-    'user-read-private',
-    'user-read-playback-state',
-    'user-modify-playback-state'
-  ];
-  
-  // Use implicit flow (token) - this works better for client-side apps
-  const authUrl = `https://accounts.spotify.com/authorize?` +
-    `response_type=token&` +  // Back to 'token' for implicit flow
-    `client_id=${CLIENT_ID}&` +
-    `scope=${encodeURIComponent(scopes.join(' '))}&` +
-    `redirect_uri=${REDIRECT_URI}&` +
-    `show_dialog=true`;
-  
-  console.log('Spotify Auth URL:', authUrl);
-  console.log('Client ID:', CLIENT_ID);
-  
-  // Use popup for better UX
-  const popup = window.open(
-    authUrl, 
-    'spotify-login', 
-    'width=600,height=700,scrollbars=yes,resizable=yes'
-  );
-  
-  const checkClosed = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(checkClosed);
-      // Check for token in localStorage (set by callback page)
-      const token = localStorage.getItem('spotify_access_token');
-      if (token) {
-        setSpotifyToken(token);
-        setShowSpotifyLogin(false);
-        console.log('Spotify connected successfully!');
-      }
-    }
-  }, 1000);
-};
-
-  const toggleSpotifyPlayback = () => {
-    if (spotifyPlayer) {
-      spotifyPlayer.togglePlay();
-    }
-  };
-
-  const nextTrack = () => {
-    if (spotifyPlayer) {
-      spotifyPlayer.nextTrack();
-    }
-  };
-
-  const previousTrack = () => {
-    if (spotifyPlayer) {
-      spotifyPlayer.previousTrack();
-    }
-  };
-
-  const toggleShuffle = () => {
-    // This would require additional API calls to Spotify Web API
-    console.log('Shuffle toggle - requires Web API integration');
-  };
-
-  // Initialize Spotify when token is available
-  useEffect(() => {
-    if (spotifyToken) {
-      initializeSpotify();
-    }
-  }, [spotifyToken, initializeSpotify]);
-
-  // Check for existing Spotify token on mount
-  useEffect(() => {
-    const token = localStorage.getItem('spotify_access_token');
-    if (token) {
-      setSpotifyToken(token);
-    }
-  }, []);
   
   // FIXED: Function to deduct Garden XP (withering penalty)
   const deductGardenXP = useCallback((amount = 3) => {
@@ -427,7 +299,7 @@ const loginToSpotify = () => {
                              target.textContent.includes('Help')
                            ));
           
-          if (isNavLink && !target.closest('.focus-controls') && !target.closest('.spotify-controls')) {
+          if (isNavLink && !target.closest('.focus-controls')) {
             event.preventDefault();
             event.stopPropagation();
             
@@ -2284,13 +2156,7 @@ const handleStartNewPomo = () => {
 
       </div>
 
-        {/* Album Art Background Overlay (when Spotify is playing) */}
-        {albumArtBackground && (
-          <div 
-            className="fixed inset-0 -z-10 opacity-20 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${albumArtBackground})` }}
-          ></div>
-        )}
+
         
         <div className="flex justify-between items-center mb-6 relative z-10">
           <button
@@ -2306,67 +2172,6 @@ const handleStartNewPomo = () => {
           <div className="flex items-center space-x-4">
 
 
-            {/* NEW: Spotify Integration Controls - Updated with smaller spacing */}
-              <div className="spotify-controls">
-                {!spotifyToken ? (
-                  <button
-                    onClick={() => setShowSpotifyLogin(true)}
-                    className="spotify-button"
-                    title="Connect to Spotify"
-                  >
-                    <svg className="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
-                    </svg>
-                    <span>Spotify</span>
-                  </button>
-                ) : (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={previousTrack}
-                        className="spotify-button"
-                        title="Previous Track"
-                      >
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
-                        </svg>
-                      </button>
-                      
-                      <button
-                        onClick={toggleSpotifyPlayback}
-                        className="spotify-button"
-                        title={isSpotifyPlaying ? "Pause" : "Play"}
-                      >
-                        {isSpotifyPlaying ? (
-                          <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-                          </svg>
-                        ) : (
-                          <svg fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                          </svg>
-                        )}
-                      </button>
-                      
-                      <button
-                        onClick={nextTrack}
-                        className="spotify-button"
-                        title="Next Track"
-                      >
-                        <svg fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z"/>
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    {currentTrack && (
-                      <div className="track-info">
-                        {currentTrack.name} - {currentTrack.artists[0].name}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
             
 
             
@@ -2792,36 +2597,7 @@ const handleStartNewPomo = () => {
           <TodoList />
         </div>
         
-        {/* NEW: Spotify Login Modal */}
-        {showSpotifyLogin && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="farm-card rounded-xl max-w-md w-full p-6 border border-gray-300 dark:border-gray-600">
-              <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Connect to Spotify</h3>
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
-                Connect your Spotify account to play music during your focus sessions. 
-              </p>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowSpotifyLogin(false)}
-                  className="btn-outline flex-1 focus-controls"
-                >
-                  Cancel
-                </button>
-                
-                <button
-                  onClick={loginToSpotify}
-                  className="btn-primary flex-1 focus-controls flex items-center justify-center space-x-2"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
-                  </svg>
-                  <span>Connect Spotify</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+ 
         
         {showPauseWarning && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
