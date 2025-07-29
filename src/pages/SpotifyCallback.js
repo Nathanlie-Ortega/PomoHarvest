@@ -1,36 +1,63 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SpotifyCallback = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Get the hash from the URL
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
-    const error = params.get('error');
+    // First try authorization code flow (from URL params)
+    const code = searchParams.get('code');
+    const error = searchParams.get('error');
 
     if (error) {
       console.error('Spotify auth error:', error);
-      alert('Failed to connect to Spotify');
+      alert('Failed to connect to Spotify: ' + error);
       navigate('/focus');
-    } else if (accessToken) {
-      // Store the token in localStorage
-      localStorage.setItem('spotify_access_token', accessToken);
-      
-      // Close the popup window if this is in a popup
-      if (window.opener) {
-        window.close();
+      return;
+    }
+
+    if (code) {
+      // For authorization code flow, you'd need to exchange the code for a token
+      // This requires a backend or serverless function
+      console.log('Received authorization code:', code);
+      alert('Authorization code received, but token exchange not implemented yet');
+      navigate('/focus');
+      return;
+    }
+
+    // Fallback: Try implicit flow (from URL hash)
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const hashError = params.get('error');
+
+      if (hashError) {
+        console.error('Spotify auth error:', hashError);
+        alert('Failed to connect to Spotify: ' + hashError);
+        navigate('/focus');
+      } else if (accessToken) {
+        // Store the token in localStorage
+        localStorage.setItem('spotify_access_token', accessToken);
+        console.log('Spotify token stored successfully');
+        
+        // Close the popup window if this is in a popup
+        if (window.opener) {
+          window.close();
+        } else {
+          // If not in popup, redirect back to focus page
+          navigate('/focus');
+        }
       } else {
-        // If not in popup, redirect back to focus page
+        console.error('No access token or code received');
         navigate('/focus');
       }
     } else {
-      console.error('No access token received');
+      console.error('No authorization data received');
       navigate('/focus');
     }
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

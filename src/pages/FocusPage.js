@@ -232,33 +232,44 @@ useEffect(() => {
     }
   }, [spotifyToken]);
 
-  const loginToSpotify = () => {
-    const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID || 'your_spotify_client_id';
-    const REDIRECT_URI = encodeURIComponent(window.location.origin + '/callback');
-    const scopes = [
-      'streaming',
-      'user-read-email',
-      'user-read-private',
-      'user-read-playback-state',
-      'user-modify-playback-state'
-    ];
-    
-    const authUrl = `https://accounts.spotify.com/authorize?response_type=token&client_id=${CLIENT_ID}&scope=${scopes.join('%20')}&redirect_uri=${REDIRECT_URI}`;
-    
-    const popup = window.open(authUrl, 'spotify-login', 'width=600,height=600');
-    
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        // Check for token in localStorage (set by callback page)
-        const token = localStorage.getItem('spotify_access_token');
-        if (token) {
-          setSpotifyToken(token);
-          setShowSpotifyLogin(false);
-        }
+const loginToSpotify = () => {
+  const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID || 'your_spotify_client_id';
+  
+  // Use the exact redirect URI that's registered in your Spotify app
+  const REDIRECT_URI = encodeURIComponent('https://pomo-harvest.vercel.app/callback');
+  
+  const scopes = [
+    'streaming',
+    'user-read-email',
+    'user-read-private',
+    'user-read-playback-state',
+    'user-modify-playback-state'
+  ];
+  
+  // Build the authorization URL with explicit parameters
+  const authUrl = `https://accounts.spotify.com/authorize?` +
+    `response_type=token&` +
+    `client_id=${CLIENT_ID}&` +
+    `scope=${encodeURIComponent(scopes.join(' '))}&` +
+    `redirect_uri=${REDIRECT_URI}&` +
+    `show_dialog=true`;
+  
+  console.log('Auth URL:', authUrl); // Debug log
+  
+  const popup = window.open(authUrl, 'spotify-login', 'width=600,height=600');
+  
+  const checkClosed = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(checkClosed);
+      // Check for token in localStorage (set by callback page)
+      const token = localStorage.getItem('spotify_access_token');
+      if (token) {
+        setSpotifyToken(token);
+        setShowSpotifyLogin(false);
       }
-    }, 1000);
-  };
+    }
+  }, 1000);
+};
 
   const toggleSpotifyPlayback = () => {
     if (spotifyPlayer) {
