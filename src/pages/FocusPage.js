@@ -246,29 +246,18 @@ const loginToSpotify = () => {
     'user-modify-playback-state'
   ];
   
-  // Build the authorization URL with explicit parameters
+  // Use authorization code flow instead of implicit flow
   const authUrl = `https://accounts.spotify.com/authorize?` +
-    `response_type=token&` +
+    `response_type=code&` +  // Changed from 'token' to 'code'
     `client_id=${CLIENT_ID}&` +
     `scope=${encodeURIComponent(scopes.join(' '))}&` +
     `redirect_uri=${REDIRECT_URI}&` +
     `show_dialog=true`;
   
-  console.log('Auth URL:', authUrl); // Debug log
+  console.log('Auth URL:', authUrl);
   
-  const popup = window.open(authUrl, 'spotify-login', 'width=600,height=600');
-  
-  const checkClosed = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(checkClosed);
-      // Check for token in localStorage (set by callback page)
-      const token = localStorage.getItem('spotify_access_token');
-      if (token) {
-        setSpotifyToken(token);
-        setShowSpotifyLogin(false);
-      }
-    }
-  }, 1000);
+  // Instead of popup, do a full redirect for authorization code flow
+  window.location.href = authUrl;
 };
 
   const toggleSpotifyPlayback = () => {
