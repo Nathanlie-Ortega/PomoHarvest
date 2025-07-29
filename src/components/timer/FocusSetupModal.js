@@ -448,73 +448,74 @@ const FocusSetupModal = ({ onClose }) => {
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-display font-bold text-gray-900 dark:text-gray-100">
-              Focus Session Setup
-            </h2>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[95vh] flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-display font-bold text-gray-900 dark:text-gray-100">
+            Focus Session Setup
+          </h2>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 p-4 sm:p-6">
           <form onSubmit={handleSubmit}>
-            {/* Harvest Explanation */}
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-300 border-l-4 border-green-400 mb-6">
+            {/* Harvest Explanation - More Compact */}
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-300 border-l-4 border-green-400 mb-4">
               <p className="font-medium mb-1 flex items-center gap-2">
-                <img src="/favicon.ico" alt="PomoHarvest Icon" className="w-5 h-5" />
+                <img src="/favicon.ico" alt="PomoHarvest Icon" className="w-4 h-4" />
                 PomoHarvest:
               </p>
-
-              <p>Choose your focus session type to grow different plants in your garden. Longer sessions yield greater harvests!</p>
-              <p className="mt-2 text-sm italic">For best results, please stay on the focus page during your session. Leaving the website may reset your progress.</p>
+              <p className="text-xs sm:text-sm">Choose your focus session type to grow different plants. Longer sessions yield greater harvests!</p>
+              <p className="mt-1 text-xs italic">Stay on the focus page during your session to avoid progress reset.</p>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Focus Time Section */}
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-1 mb-2">
                   Focus Session Type
                 </h3>
                 
                 <div className="relative">
                   <button
                     type="button"
-                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                     onClick={() => toggleDropdown('focus')}
                   >
-                    <span className="text-lg font-mono">
+                    <span className="font-mono">
                       {getCurrentFocusType().emoji} {getCurrentFocusType().name} {currentFocusCategory !== 'custom' ? `(${formatTime(focusHours, focusMinutes)})` : 
                       `(${focusHours > 0 ? `${focusHours}h ` : ''}${focusMinutes}m)`}
                     </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </button>
                   
                   {showFocusDropdown && (
-                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-72 overflow-y-auto">
+                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                       <div className="py-1">
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Session Types</div>
+                        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Session Types</div>
                         {generateFocusTypeOptions()}
                         
                         {showCustomFocusInput && generateCustomFocusInput()}
                         
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Quick Select</div>
+                        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Quick Select</div>
                         
-                        <div className="grid grid-cols-4 gap-1 px-3 py-2">
+                        <div className="grid grid-cols-6 gap-1 px-3 py-2">
                           {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map(minute => (
                             <button
                               key={minute}
                               type="button"
-                              className={`px-2 py-1 text-center text-sm rounded ${
+                              className={`px-1 py-1 text-center text-xs rounded ${
                                 focusMinutes === minute && focusHours === 0
                                   ? 'bg-primary-100 dark:bg-primary-600'
                                   : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -538,43 +539,43 @@ const FocusSetupModal = ({ onClose }) => {
               
               {/* Break Time Section */}
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-1 mb-2">
                   Break Type
                 </h3>
                 
                 <div className="relative">
                   <button
                     type="button"
-                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                     onClick={() => toggleDropdown('break')}
                   >
-                    <span className="text-lg font-mono">
+                    <span className="font-mono">
                       {getCurrentBreakType().emoji} {getCurrentBreakType().name} {breakEnabled && breakMinutes > 0 && currentBreakCategory !== 'custom' ? `(${String(breakMinutes).padStart(2, '0')}:00)` : 
                       breakEnabled && currentBreakCategory === 'custom' ? `(${breakMinutes >= 60 ? `${Math.floor(breakMinutes / 60)}h ${breakMinutes % 60}m` : `${breakMinutes}m`})` : ''}
                     </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </button>
                   
                   {showBreakDropdown && (
-                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-72 overflow-y-auto">
+                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
                       <div className="py-1">
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Break Types</div>
+                        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Break Types</div>
                         {generateBreakTypeOptions()}
                         
                         {showCustomBreakInput && breakEnabled && generateCustomBreakInput()}
                         
                         {breakEnabled && (
                           <>
-                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Quick Select</div>
+                            <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Quick Select</div>
                             
                             <div className="grid grid-cols-4 gap-1 px-3 py-2">
                               {[1, 3, 5, 7, 10, 15, 20, 30].map(minute => (
                                 <button
                                   key={minute}
                                   type="button"
-                                  className={`px-2 py-1 text-center text-sm rounded ${
+                                  className={`px-1 py-1 text-center text-xs rounded ${
                                     breakMinutes === minute
                                       ? 'bg-primary-100 dark:bg-primary-600'
                                       : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -600,28 +601,28 @@ const FocusSetupModal = ({ onClose }) => {
               
               {/* Plant Selection Section */}
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-1 mb-2">
                   Select Your Plant
                 </h3>
                 
                 <div className="relative">
                   <button
                     type="button"
-                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                     onClick={() => toggleDropdown('plant')}
                   >
-                    <span className="text-lg font-mono">
+                    <span className="font-mono">
                       {getCurrentPlantType()}
                     </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </button>
                   
                   {showPlantDropdown && (
-                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                    <div className="absolute mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
                       <div className="py-1">
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Plant Types</div>
+                        <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 font-medium">Plant Types</div>
                         {generatePlantTypeOptions()}
                       </div>
                     </div>
@@ -629,39 +630,43 @@ const FocusSetupModal = ({ onClose }) => {
                 </div>
               </div>
               
-              {/* Description Field */}
+              {/* Description Field - More Compact */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   What are you focusing today? (optional)
                 </label>
                 <textarea
-                  rows="3"
+                  rows="2"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe what you'll be working on..."
-                  className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm 
+                  className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md shadow-sm 
                            focus:outline-none focus:ring-primary-500 focus:border-primary-500 
-                           dark:bg-gray-700 dark:text-white"
+                           dark:bg-gray-700 dark:text-white resize-none"
                 />
               </div>
             </div>
-            
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                Start Growing
-              </button>
-            </div>
           </form>
+        </div>
+        
+        {/* Fixed Footer */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex-shrink-0">
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Start Growing
+            </button>
+          </div>
         </div>
       </div>
     </div>
