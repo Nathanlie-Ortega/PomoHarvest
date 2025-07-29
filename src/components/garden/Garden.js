@@ -15,7 +15,6 @@ const Garden = () => {
       const harvestHistory = getHarvestHistory();
       
       // Convert harvest history to plants format
-      // Convert harvest history to plants format
       const plantsData = harvestHistory.map(entry => ({
         id: entry.id,
         type: entry.plantType,
@@ -47,14 +46,22 @@ const Garden = () => {
       }, 100); // Small delay to ensure reset is complete
     };
     
+    // Listen for demo user deletion
+    const handleDemoUserDeleted = () => {
+      console.log('🗑️ Garden: Demo user deleted, clearing plants');
+      setPlants([]);
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('statsUpdated', handleStorageChange);
-    window.addEventListener('gardenReset', handleReset); // NEW: Listen for reset events
+    window.addEventListener('gardenReset', handleReset);
+    window.addEventListener('demoUserDeleted', handleDemoUserDeleted);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('statsUpdated', handleStorageChange);
       window.removeEventListener('gardenReset', handleReset);
+      window.removeEventListener('demoUserDeleted', handleDemoUserDeleted);
     };
   }, []);
 

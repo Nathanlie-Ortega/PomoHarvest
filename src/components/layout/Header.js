@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, deleteDemoUser } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -14,6 +15,47 @@ const Header = () => {
   
   const isActive = (path) => {
     return location.pathname === path;
+  };
+  
+  const handleExitDemo = async () => {
+    try {
+      console.log('🚪 Exiting demo mode...');
+      
+      // Clear ALL localStorage data before deleting user
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('🧹 Cleared all storage');
+      
+      // Delete demo user data and account
+      await deleteDemoUser();
+      
+      console.log('✅ Demo user deleted, navigating to home...');
+      
+      // Force navigation to home page
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('❌ Error exiting demo:', error);
+      // Fallback: clear storage and force navigate to home
+      localStorage.clear();
+      sessionStorage.clear();
+      try {
+        await logout();
+      } catch (logoutError) {
+        console.error('Logout also failed:', logoutError);
+      }
+      // Force navigation to home
+      window.location.href = '/';
+    }
+  };
+  
+  const handleLogout = async () => {
+    if (currentUser?.isAnonymous) {
+      await handleExitDemo();
+    } else {
+      await logout();
+      navigate('/');
+    }
   };
   
   // Different navigation links based on authentication
@@ -70,28 +112,48 @@ const Header = () => {
             
             {currentUser ? (
               <>
-                <Link 
-                  to="/settings" 
-                  className={`text-sm font-medium transition-all duration-300 ${
-                    isActive('/settings')
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-green-600 dark:text-green-400 hover:text-white'
-                  }`}
-                  onMouseEnter={(e) => {
-                    if (!isActive('/settings')) {
-                      e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive('/settings')) {
-                      e.target.style.textShadow = 'none';
-                    }
-                  }}
-                >
-                  Settings
-                </Link>
+                {/* FIXED: Demo indicator with NO background, just white text */}
+                {currentUser.isAnonymous && (
+                  <span 
+                    style={{ 
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      padding: '4px 8px',
+                      border: '2px solid #22c55e',
+                      borderRadius: '6px',
+                      backgroundColor: 'transparent'
+                    }}
+                  >
+                    Demo User
+                  </span>
+                )}
+                
+                {!currentUser.isAnonymous && (
+                  <Link 
+                    to="/settings" 
+                    className={`text-sm font-medium transition-all duration-300 ${
+                      isActive('/settings')
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-green-600 dark:text-green-400 hover:text-white'
+                    }`}
+                    onMouseEnter={(e) => {
+                      if (!isActive('/settings')) {
+                        e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive('/settings')) {
+                        e.target.style.textShadow = 'none';
+                      }
+                    }}
+                  >
+                    Settings
+                  </Link>
+                )}
+                
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="btn-outline text-sm hover:text-white transition-all duration-300"
                   onMouseEnter={(e) => {
                     e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
@@ -100,7 +162,7 @@ const Header = () => {
                     e.target.style.textShadow = 'none';
                   }}
                 >
-                  Log Out
+                  {currentUser.isAnonymous ? 'Exit Demo' : 'Log Out'}
                 </button>
               </>
             ) : (
@@ -169,30 +231,51 @@ const Header = () => {
               
               {currentUser ? (
                 <>
-                  <Link 
-                    to="/settings" 
-                    className={`px-2 py-1 text-sm font-medium transition-all duration-300 ${
-                      isActive('/settings')
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-green-600 dark:text-green-400 hover:text-white'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    onMouseEnter={(e) => {
-                      if (!isActive('/settings')) {
-                        e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive('/settings')) {
-                        e.target.style.textShadow = 'none';
-                      }
-                    }}
-                  >
-                    Settings
-                  </Link>
+                  {/* FIXED: Mobile demo indicator with NO background, just white text */}
+                  {currentUser.isAnonymous && (
+                    <span 
+                      style={{ 
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        padding: '4px 8px',
+                        border: '2px solid #22c55e',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        width: 'fit-content'
+                      }}
+                    >
+                      Demo User
+                    </span>
+                  )}
+                  
+                  {!currentUser.isAnonymous && (
+                    <Link 
+                      to="/settings" 
+                      className={`px-2 py-1 text-sm font-medium transition-all duration-300 ${
+                        isActive('/settings')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-green-600 dark:text-green-400 hover:text-white'
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                      onMouseEnter={(e) => {
+                        if (!isActive('/settings')) {
+                          e.target.style.textShadow = '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive('/settings')) {
+                          e.target.style.textShadow = 'none';
+                        }
+                      }}
+                    >
+                      Settings
+                    </Link>
+                  )}
+                  
                   <button
                     onClick={() => {
-                      logout();
+                      handleLogout();
                       setIsMenuOpen(false);
                     }}
                     className="px-2 py-1 text-sm font-medium text-green-600 dark:text-green-400 hover:text-white transition-all duration-300 text-left"
@@ -203,7 +286,7 @@ const Header = () => {
                       e.target.style.textShadow = 'none';
                     }}
                   >
-                    Log Out
+                    {currentUser.isAnonymous ? 'Exit Demo' : 'Log Out'}
                   </button>
                 </>
               ) : (

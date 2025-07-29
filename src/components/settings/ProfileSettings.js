@@ -31,7 +31,7 @@ const ProfileSettings = () => {
   const isDisplayNameChanged = displayName.trim() !== originalDisplayName.trim();
   const isFormValid = displayName.trim().length > 0 && isDisplayNameChanged;
   
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!currentUser) return;
@@ -41,24 +41,63 @@ const ProfileSettings = () => {
       setError('');
       setLoading(true);
       
-      // Update Firebase Auth profile
-      await updateProfile(currentUser, {
-        displayName
+      // Get fresh user from auth instead of using currentUser from context
+      const freshUser = auth.currentUser;
+      if (!freshUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Update Firebase Auth profile with fresh user object
+      await updateProfile(freshUser, {
+        displayName: displayName.trim()
       });
       
-      // Update Firestore document
-      const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, {
-        displayName
-      });
+      // Force reload the user to get updated profile
+      await freshUser.reload();
+      
+      // Update the leaderboard entry with the new display name
+      try {
+        const leaderboardRef = doc(db, 'leaderboard', freshUser.uid);
+        await updateDoc(leaderboardRef, {
+          displayName: displayName.trim(),
+          lastUpdated: new Date().toISOString()
+        });
+        console.log('Leaderboard display name updated successfully');
+      } catch (leaderboardError) {
+        console.log('Leaderboard update failed (this is okay):', leaderboardError);
+      }
+      
+      // Optional: Try to update users collection as well
+      try {
+        const userRef = doc(db, 'users', freshUser.uid);
+        await updateDoc(userRef, {
+          displayName: displayName.trim()
+        });
+      } catch (firestoreError) {
+        console.log('Users collection update failed (this is okay):', firestoreError);
+      }
       
       setMessage('Profile updated successfully');
       
       // Update the original display name to the new value
       setOriginalDisplayName(displayName.trim());
+      
+      // Force a complete page reload to ensure all components get the updated data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500); // Give user time to see success message, then reload
+      
     } catch (error) {
-      setError('Failed to update profile');
       console.error('Profile update error:', error);
+      
+      // More specific error messages
+      if (error.message.includes('getIdToken')) {
+        setError('Authentication session expired. Please refresh the page and try again.');
+      } else if (error.code === 'auth/user-token-expired') {
+        setError('Your session has expired. Please refresh the page and try again.');
+      } else {
+        setError('Failed to update profile. Please try again.');
+      }
     }
     
     setLoading(false);

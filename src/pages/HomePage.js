@@ -1,19 +1,48 @@
-// src/pages/HomePage.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '../components/layout/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebase/firebase';
 
 const HomePage = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [demoLoading, setDemoLoading] = useState(false);
   
   // Redirect to dashboard if already logged in
-  useEffect(() => {
-    if (currentUser) {
+useEffect(() => {
+  // Check if we're exiting demo mode
+  const exitingDemo = localStorage.getItem('exitingDemo');
+  if (exitingDemo) {
+    localStorage.removeItem('exitingDemo');
+    return; // Don't redirect to dashboard
+  }
+  
+  if (currentUser) {
+    navigate('/dashboard');
+  }
+}, [currentUser, navigate]);
+  
+  const handleTryDemo = async () => {
+    try {
+      setDemoLoading(true);
+      console.log('🎯 Starting anonymous demo login...');
+      
+      // Sign in anonymously with Firebase
+      const result = await signInAnonymously(auth);
+      console.log('✅ Anonymous user created:', result.user.uid);
+      
+      // Navigate to dashboard (the useEffect above will handle the redirect)
       navigate('/dashboard');
+      
+    } catch (error) {
+      console.error('❌ Anonymous login failed:', error);
+      alert('Demo mode failed to start. Please try again.');
+    } finally {
+      setDemoLoading(false);
     }
-  }, [currentUser, navigate]);
+  };
   
   return (
     <Layout>
@@ -31,9 +60,13 @@ const HomePage = () => {
           <Link to="/login" className="btn-primary text-center py-3 px-8 text-lg">
             Get Started
           </Link>
-          <Link to="/dashboard" className="btn-outline text-center py-3 px-8 text-lg">
-            Try Demo
-          </Link>
+          <button 
+            onClick={handleTryDemo}
+            disabled={demoLoading}
+            className="btn-outline text-center py-3 px-8 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {demoLoading ? 'Starting Demo...' : 'Try Demo'}
+          </button>
         </div>
         
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -55,9 +88,9 @@ const HomePage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
               </svg>
             </div>
-            <h3 className="text-xl font-display font-bold mb-2">Virtual Garden</h3>
+            <h3 className="text-xl font-display font-bold mb-2">Grow and Compete</h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Grow your own virtual garden with each completed pomodoro.
+              Complete pomodoros to grow your progress and rise on the leaderboard.
             </p>
           </div>
           

@@ -43,6 +43,19 @@ const GardenStats = () => {
     generateMonthlyData(stats);
   };
 
+  // Clear all data (for demo user reset)
+  const clearAllData = () => {
+    console.log('🧹 GardenStats: Clearing all data');
+    setLevelData({ level: 1, currentXP: 0, nextLevelXP: 10, percentage: 0 });
+    setHarvestHistory([]);
+    setHarvestStats({ totalHarvested: 0, totalWilted: 0 });
+    setCurrentStreak(0);
+    setTodaysFocus(0);
+    setWeeklyData([]);
+    setMonthlyData([]);
+    setShowAllHarvests(false);
+  };
+
   const generateWeeklyData = (history) => {
     const weekData = [];
     const today = new Date();
@@ -113,8 +126,21 @@ const GardenStats = () => {
       loadData();
     };
     
+    // Listen for demo user deletion and stats reset
+    const handleStatsReset = () => {
+      console.log('📊 GardenStats: Received stats reset event');
+      clearAllData();
+    };
+    
+    const handleDemoUserDeleted = () => {
+      console.log('🗑️ GardenStats: Demo user deleted, clearing data');
+      clearAllData();
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('statsUpdated', handleStorageChange);
+    window.addEventListener('statsReset', handleStatsReset);
+    window.addEventListener('demoUserDeleted', handleDemoUserDeleted);
     
     // Auto-refresh every 10 seconds
     const interval = setInterval(loadData, 10000);
@@ -122,6 +148,8 @@ const GardenStats = () => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('statsUpdated', handleStorageChange);
+      window.removeEventListener('statsReset', handleStatsReset);
+      window.removeEventListener('demoUserDeleted', handleDemoUserDeleted);
       clearInterval(interval);
     };
   }, []);

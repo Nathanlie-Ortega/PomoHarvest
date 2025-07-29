@@ -260,10 +260,13 @@ const Leaderboard = () => {
           How Rankings Work
         </h4>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+
+          <p>• You must be logged in to count your Garden XP on the Leaderboard </p>
           <p>• Rankings are based on your Gardener Level from focus sessions</p>
           <p>• Higher levels rank above lower levels</p>
           <p>• Ties are broken by total Garden XP earned</p>
           <p>• Rankings update automatically when you complete sessions</p>
+
         </div>
       </div>
     </div>
