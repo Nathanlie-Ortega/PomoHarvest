@@ -246,18 +246,36 @@ const loginToSpotify = () => {
     'user-modify-playback-state'
   ];
   
-  // Use authorization code flow instead of implicit flow
+  // Use implicit flow (token) - this works better for client-side apps
   const authUrl = `https://accounts.spotify.com/authorize?` +
-    `response_type=code&` +  // Changed from 'token' to 'code'
+    `response_type=token&` +  // Back to 'token' for implicit flow
     `client_id=${CLIENT_ID}&` +
     `scope=${encodeURIComponent(scopes.join(' '))}&` +
     `redirect_uri=${REDIRECT_URI}&` +
     `show_dialog=true`;
   
-  console.log('Auth URL:', authUrl);
+  console.log('Spotify Auth URL:', authUrl);
+  console.log('Client ID:', CLIENT_ID);
   
-  // Instead of popup, do a full redirect for authorization code flow
-  window.location.href = authUrl;
+  // Use popup for better UX
+  const popup = window.open(
+    authUrl, 
+    'spotify-login', 
+    'width=600,height=700,scrollbars=yes,resizable=yes'
+  );
+  
+  const checkClosed = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(checkClosed);
+      // Check for token in localStorage (set by callback page)
+      const token = localStorage.getItem('spotify_access_token');
+      if (token) {
+        setSpotifyToken(token);
+        setShowSpotifyLogin(false);
+        console.log('Spotify connected successfully!');
+      }
+    }
+  }, 1000);
 };
 
   const toggleSpotifyPlayback = () => {
